@@ -8,6 +8,7 @@ using Mafi.Localization;
 using Mafi.Unity;
 using Mafi.Unity.InputControl;
 using Mafi.Unity.Ui.Hud;
+using Mafi.Unity.Ui.Library;
 using Mafi.Unity.UiToolkit.Component;
 using Mafi.Unity.UiToolkit.Library;
 
@@ -15,8 +16,8 @@ namespace ResearchReorder;
 
 /// <summary>
 /// Discovers the game's ResearchWindow and injects a queue panel into it.
-/// When no research node is selected, the panel shows the research queue with
-/// arrow buttons for reordering.
+/// When no research node is selected, the panel shows the current research
+/// with a live progress bar, plus the research queue with reorder buttons.
 /// </summary>
 [GlobalDependency(RegistrationMode.AsEverything)]
 public class ResearchReorderWindowController {
@@ -41,6 +42,15 @@ public class ResearchReorderWindowController {
 	private FieldInfo _selectedNodeField;      // m_selectedNode field on ResearchWindow
 	private PropertyInfo _hasValueProp;        // HasValue property on Option<ResearchNodeUi>
 	private bool _pollingActive;
+
+	// Phase 5c: Current research section
+	private ProgressBarPercentInline _progressBar;
+	private Label _currentResearchNameLabel;
+	private Column _currentResearchContent;   // Visible when research is active
+	private Label _noResearchLabel;           // Visible when no research
+	private ButtonText _downArrowBtn;
+	private PropertyInfo _currentResearchProp;   // Cached: CurrentResearch property on ResearchManager
+	private MethodInfo _refreshQueueMethod;      // Cached: refreshQueueValues() on ResearchManager
 
 	public ResearchReorderWindowController(
 		ToolbarHud toolbar,
@@ -69,6 +79,11 @@ public class ResearchReorderWindowController {
 		if (_queueField == null) {
 			Log.Error("ResearchReorder: Could not find m_researchQueue field!");
 		}
+
+		// Cache reflection for current research manipulation
+		_currentResearchProp = typeof(ResearchManager).GetProperty("CurrentResearch");
+		_refreshQueueMethod = typeof(ResearchManager).GetMethod("refreshQueueValues",
+			BindingFlags.NonPublic | BindingFlags.Instance);
 
 		// Find ResearchWindow via the game's ResearchWindow+Controller.
 		// The controller extends WindowController<ResearchWindow> and stores the
@@ -181,8 +196,9 @@ public class ResearchReorderWindowController {
 
 	/// <summary>
 	/// Injects our queue panel into the research tree's content Row as a sibling
-	/// of ResearchDetailUi. Uses Panel (same base class as ResearchDetailUi) with
-	/// default styling to match the native look.
+	/// of ResearchDetailUi. The panel has two sections:
+	/// 1. CURRENT RESEARCH — shows active research with progress bar and controls
+	/// 2. RESEARCH QUEUE — shows queued items with reorder buttons
 	/// </summary>
 	private void TryInjectPanel() {
 		if (_panelInjected || _researchWindow == null) return;
@@ -219,11 +235,8 @@ public class ResearchReorderWindowController {
 				}
 			}
 
-			// Build the queue panel matching native ResearchDetailUi exactly:
-			// Panel() with default bolts, AlignSelfStretch() for full height,
-			// Body.JustifyItemsCenter(), single Column for content.
+			// Build the queue panel matching native ResearchDetailUi styling
 			_injectedPanel = new Panel();
-			// Read MIN_WIDTH from ResearchDetailUi so we match its exact width
 			Px panelWidth = new Px(468); // fallback
 			if (_researchDetailUi != null) {
 				var minWidthField = _researchDetailUi.GetType().GetField("MIN_WIDTH",
@@ -235,16 +248,13 @@ public class ResearchReorderWindowController {
 			}
 			_injectedPanel.Width(panelWidth);
 			_injectedPanel.MaxWidth(25.Percent());
-			_injectedPanel.AlignSelfStretch();  // Fill full height of parent Row (covers diamond plate)
+			_injectedPanel.AlignSelfStretch();
 			_injectedPanel.Body.JustifyItemsCenter();
 
-			// Single content column matching native pattern (Column with 2pt gap)
 			var contentCol = new Column(2.pt());
 			contentCol.AlignItemsStretch();
 
-			// Title row — matches native: Padding(8), MarginLeftRight(-PADDING), centered,
-			// with a colored background like ResearchDetailUi's title bar.
-			// Uses IN_QUEUE_COLOR from ResearchThemeHelper: ColorRgba(3700253, 83)
+			// ── Main title row (colored background) ──
 			var titleRow = new Row(1.pt());
 			titleRow.Padding(8.px()).MarginLeftRight(-PanelBase<Panel, Column>.PADDING).JustifyItemsCenter();
 			titleRow.Background(new ColorRgba(3700253, 83));
@@ -252,11 +262,50 @@ public class ResearchReorderWindowController {
 			title.TextCenterMiddle().FontBold().FontSize(15);
 			titleRow.Add(title);
 
-			// Scrollable list for queue items
+			// ── CURRENT RESEARCH section ──
+			var currentResearchHeader = new Label(new LocStrFormatted("Current Research"));
+			currentResearchHeader.FontBold().UpperCase();
+
+			// Content shown when research is active (name + progress bar + buttons)
+			_currentResearchContent = new Column(1.pt());
+			_currentResearchContent.AlignItemsStretch();
+
+			_currentResearchNameLabel = new Label(new LocStrFormatted(""));
+			_currentResearchNameLabel.FontSize(15);
+
+			_progressBar = new ProgressBarPercentInline();
+
+			var buttonsRow = new Row(1.pt());
+			buttonsRow.Margin(1.pt());
+
+			_downArrowBtn = new ButtonText(new LocStrFormatted("\u25bc"), () => SwapCurrentWithQueueTop());
+			_downArrowBtn.Size(new Px(30), new Px(24));
+
+			var cancelBtn = new ButtonIcon(Button.Danger,
+				"Assets/Unity/UserInterface/General/Cancel.svg",
+				() => CancelCurrentResearch());
+
+			buttonsRow.Add(_downArrowBtn, cancelBtn);
+			_currentResearchContent.Add(_currentResearchNameLabel, _progressBar, buttonsRow);
+
+			// Label shown when no research is active
+			_noResearchLabel = new Label(new LocStrFormatted("No research"));
+			_noResearchLabel.FontSize(14).TextCenterMiddle();
+
+			// ── RESEARCH QUEUE section ──
+			var queueHeader = new Label(new LocStrFormatted("Research Queue"));
+			queueHeader.FontBold().UpperCase();
+
 			_embeddedScroll = new ScrollColumn();
 			_embeddedScroll.FlexGrow(1f);
 
-			contentCol.Add(titleRow, _embeddedScroll);
+			// Assemble everything
+			contentCol.Add(titleRow);
+			contentCol.Add(currentResearchHeader);
+			contentCol.Add(_currentResearchContent);
+			contentCol.Add(_noResearchLabel);
+			contentCol.Add(queueHeader);
+			contentCol.Add(_embeddedScroll);
 			_injectedPanel.Body.Add(contentCol);
 
 			// Defer adding to next frame so layout picks it up
@@ -275,11 +324,15 @@ public class ResearchReorderWindowController {
 	}
 
 	/// <summary>
-	/// Refreshes the embedded queue panel with current queue data.
+	/// Refreshes both the current research section and the queue list.
 	/// </summary>
 	private void RefreshEmbeddedPanel() {
 		if (_embeddedScroll == null) return;
 
+		// Update current research display
+		UpdateCurrentResearchSection();
+
+		// Rebuild queue rows
 		foreach (var row in _embeddedRows) {
 			row.RemoveFromHierarchy();
 		}
@@ -287,6 +340,44 @@ public class ResearchReorderWindowController {
 
 		var items = ReadQueueItems();
 		BuildQueueRows(_embeddedScroll, _embeddedRows, items, MoveItem);
+	}
+
+	/// <summary>
+	/// Updates the current research section: name, progress bar, button visibility.
+	/// Called on refresh and can be called independently for progress updates.
+	/// </summary>
+	private void UpdateCurrentResearchSection() {
+		if (_currentResearchContent == null) return;
+
+		var currentOpt = _researchMgr.CurrentResearch;
+
+		if (currentOpt.HasValue) {
+			var node = currentOpt.ValueOrNull;
+			if (node == null) {
+				_currentResearchContent.SetVisible(false);
+				_noResearchLabel.SetVisible(true);
+				return;
+			}
+
+			_currentResearchContent.SetVisible(true);
+			_noResearchLabel.SetVisible(false);
+
+			_currentResearchNameLabel.Value(
+				new LocStrFormatted(node.Proto.Strings.Name.TranslatedString));
+
+			// Update progress bar
+			var progress = node.ProgressInPerc;
+			_progressBar.Value(progress);
+			bool hasLab = _researchMgr.HasActiveLab;
+			_progressBar.SetState(hasLab ? DisplayState.Positive : DisplayState.Warning);
+
+			// Down arrow only visible if queue has items to swap with
+			var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
+			_downArrowBtn.SetVisible(queue.Count > 0);
+		} else {
+			_currentResearchContent.SetVisible(false);
+			_noResearchLabel.SetVisible(true);
+		}
 	}
 
 	private static UiComponent FindParentOfType(UiComponent parent, string childTypeName) {
@@ -315,6 +406,7 @@ public class ResearchReorderWindowController {
 
 		try {
 			UpdatePanelVisibility();
+			UpdateProgressBar();
 		} catch (Exception ex) {
 			Log.Warning($"ResearchReorder: Visibility poll error: {ex.Message}");
 			_pollingActive = false;
@@ -340,6 +432,93 @@ public class ResearchReorderWindowController {
 				_researchDetailUi.SetVisible(false);
 			}
 		}
+	}
+
+	/// <summary>
+	/// Updates the progress bar every frame for real-time feedback.
+	/// Only runs when our panel is visible.
+	/// </summary>
+	private void UpdateProgressBar() {
+		if (_progressBar == null || !_injectedPanel.IsVisible()) return;
+
+		var currentOpt = _researchMgr.CurrentResearch;
+		if (!currentOpt.HasValue) return;
+
+		var node = currentOpt.ValueOrNull;
+		if (node == null) return;
+
+		_progressBar.Value(node.ProgressInPerc);
+		bool hasLab = _researchMgr.HasActiveLab;
+		_progressBar.SetState(hasLab ? DisplayState.Positive : DisplayState.Warning);
+	}
+
+	/// <summary>
+	/// Cancels the current research and auto-starts the next queued item (if any).
+	/// Unlike the native StopResearch() which clears the entire queue, this
+	/// preserves the queue — only the current item is removed.
+	/// </summary>
+	private void CancelCurrentResearch() {
+		var currentOpt = _researchMgr.CurrentResearch;
+		if (!currentOpt.HasValue) return;
+
+		var current = currentOpt.ValueOrNull;
+		if (current == null) return;
+
+		// Cancel research on the node (resets state, preserves progress points)
+		((IResearchNodeFriend)current).CancelResearch();
+
+		// Clear CurrentResearch via reflection (private setter)
+		var setter = _currentResearchProp?.GetSetMethod(true);
+		if (setter != null) {
+			setter.Invoke(_researchMgr, new object[] { Option<ResearchNode>.None });
+		}
+
+		// Auto-start next queued item if available
+		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
+		if (queue.Count > 0) {
+			var next = queue.Dequeue();
+			_researchMgr.TryStartResearch(next.Proto, out _);
+		}
+
+		_refreshQueueMethod?.Invoke(_researchMgr, null);
+		RefreshEmbeddedPanel();
+		Log.Info($"ResearchReorder: Cancelled '{current.Proto.Strings.Name.TranslatedString}'");
+	}
+
+	/// <summary>
+	/// Swaps the currently-researching item with the first item in the queue.
+	/// The old current goes to queue position 0, the old queue[0] becomes active.
+	/// </summary>
+	private void SwapCurrentWithQueueTop() {
+		var currentOpt = _researchMgr.CurrentResearch;
+		if (!currentOpt.HasValue) return;
+
+		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
+		if (queue.Count == 0) return;
+
+		var oldCurrent = currentOpt.ValueOrNull;
+		if (oldCurrent == null) return;
+
+		var newCurrent = queue.PopAt(0);
+
+		// Cancel old current research
+		((IResearchNodeFriend)oldCurrent).CancelResearch();
+
+		// Clear CurrentResearch via reflection (private setter)
+		var setter = _currentResearchProp?.GetSetMethod(true);
+		if (setter != null) {
+			setter.Invoke(_researchMgr, new object[] { Option<ResearchNode>.None });
+		}
+
+		// Start the new current research
+		_researchMgr.TryStartResearch(newCurrent.Proto, out _);
+
+		// Put old current at the front of the queue
+		queue.EnqueueAt(oldCurrent, 0);
+
+		_refreshQueueMethod?.Invoke(_researchMgr, null);
+		RefreshEmbeddedPanel();
+		Log.Info($"ResearchReorder: Swapped to '{newCurrent.Proto.Strings.Name.TranslatedString}'");
 	}
 
 	/// <summary>
@@ -382,8 +561,6 @@ public class ResearchReorderWindowController {
 
 	/// <summary>
 	/// Builds numbered queue rows with arrow buttons into a target container.
-	/// Uses Label (not Display) and native game styling patterns to match
-	/// the look of ResearchDetailUi.
 	/// </summary>
 	private static void BuildQueueRows(
 		UiComponent container,
@@ -392,13 +569,10 @@ public class ResearchReorderWindowController {
 		Action<int, int> onMoveRequested) {
 
 		if (queueItems.Count == 0) {
-			var emptyRow = new Row();
-			emptyRow.JustifyItemsCenter().FlexGrow(1f);
-			var emptyLabel = new Label(new LocStrFormatted("Queue is empty"));
+			var emptyLabel = new Label(new LocStrFormatted("Empty"));
 			emptyLabel.FontSize(14).TextCenterMiddle();
-			emptyRow.Add(emptyLabel);
-			container.Add(emptyRow);
-			trackingList.Add(emptyRow);
+			container.Add(emptyLabel);
+			trackingList.Add(emptyLabel);
 			return;
 		}
 

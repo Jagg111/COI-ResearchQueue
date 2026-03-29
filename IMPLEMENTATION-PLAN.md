@@ -66,7 +66,7 @@ Each task is a single focused change. Do them in any order unless noted.
   - **Title bar styling:** Added `titleRow.Background(new ColorRgba(3700253, 83))` using the game's `IN_QUEUE_COLOR` for a colored header bar matching native style.
   - Background and bolts/frame unchanged (already correct from Phase 4d).
 - [x] **5b: Empty queue state** — "Queue is empty" text centered horizontally and vertically in the panel using a `Row` wrapper with `JustifyItemsCenter().FlexGrow(1f)`, matching the title bar centering pattern.
-- [ ] **5c: Currently-researching item** — Show active research at position 0, visually distinct (bold or "▶" prefix).
+- [x] **5c: Currently-researching item** — Separate "CURRENT RESEARCH" section above the queue with research name, native `ProgressBarPercentInline` progress bar (real-time updates, green/yellow state matching native `ResearchDetailUi`), down-arrow button (swap with queue top, conditional on queue having items), and cancel button (`ButtonIcon` with `Button.Danger`, cancels current and auto-starts next queued item without clearing the queue). Empty state shows "No research". Queue section renamed to "RESEARCH QUEUE" with "Empty" text when no items.
 - [ ] **5d: Remove from queue** — Add ✕ button per item. Wire to the game's dequeue command.
 - [ ] **5e: Reactive updates** — Auto-refresh when queue changes externally. Research `ResearchManager` events; fall back to polling if none exist.
 - [ ] **5f: Reflection error handling** — try/catch around reflection access. Show "Queue unavailable" on failure.
@@ -97,7 +97,9 @@ Independent subtasks — do any/all based on user priority. No required order.
 
 **Phase 5a: COMPLETE** — Panel now matches native `ResearchDetailUi` styling: full-height via `AlignSelfStretch()`, title bar with `IN_QUEUE_COLOR` background. Detailed visual construction documented in MODDING-REFERENCE.md. Phase 5h (title bar background) also addressed.
 
-**Phase 5 in progress** — Remaining: 5c–5f, 5i, 5j.
+**Phase 5c: COMPLETE** — "CURRENT RESEARCH" section with live progress bar, cancel button, and conditional down-arrow for swapping with queue top. Uses native `ProgressBarPercentInline` from `Mafi.Unity.Ui.Library` with `DisplayState.Positive`/`Warning` matching native behavior. Cancel uses `IResearchNodeFriend.CancelResearch()` directly to preserve queue (unlike native `StopResearch()` which clears it).
+
+**Phase 5 in progress** — Remaining: 5d–5f, 5i, 5j.
 
 ## Phase Details
 

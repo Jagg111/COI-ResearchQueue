@@ -1110,6 +1110,95 @@ Used by `Panel.BackgroundStyle()` and `ProgressBarPercentInline.State()`:
 | `Warning` | 4 | Caution (yellow) |
 | `Danger` | 5 | Error/blocked (red) |
 
+### ProgressBarPercentInline (`Mafi.Unity.Ui.Library.ProgressBarPercentInline`)
+
+**Decompiled from Mafi.Unity.dll** — inline progress bar with percentage display. Extends `Row`, implements `IComponentWithStateColor`.
+
+```csharp
+// Namespace: Mafi.Unity.Ui.Library (NOT Mafi.Unity.UiToolkit.Library)
+public class ProgressBarPercentInline : Row, IComponentWithStateColor
+{
+    public ProgressBarPercentInline()           // No-arg constructor
+    public ProgressBarPercentInline Value(Percent value)       // Sets both bar and % display
+    public ProgressBarPercentInline DisplayValue(Percent value) // Sets only % display
+    public void SetState(DisplayState state)   // Sets color on both bar and % display
+}
+```
+
+**Internal structure:** `Row` with reversed direction (percentage text LEFT, bar RIGHT). Contains a `ProgressBar` (`.Fill().TranslateX(-2.px())`) and a `Display` (`.MinDigits(4)`).
+
+**Usage pattern (from native `ResearchDetailUi`):**
+```csharp
+var progressCol = new Column(1.pt()) {
+    c => c.AlignItemsStretch(),
+    new Label(Tr.ResearchProgress).FontBold().UpperCase(),
+    progressBar = new ProgressBarPercentInline()
+};
+
+// Update (called reactively or via polling):
+progressBar.Value(node.ProgressInPerc);          // Percent type from ResearchNode
+progressBar.SetState(isActive ? DisplayState.Positive : DisplayState.Warning);
+```
+
+### IResearchNodeFriend (`Mafi.Core.Research.IResearchNodeFriend`)
+
+**Public interface** implemented by `ResearchNode`. Provides methods to manipulate research state directly:
+
+```csharp
+public interface IResearchNodeFriend
+{
+    void CancelResearch();   // Resets node from InProgress, preserves StepsDone
+    void StartResearch();    // Sets node to InProgress
+    void IncStepsDone(long steps);
+    void ForceStepsToDone();
+    // ... other members for graph building and lab requirements
+}
+
+// Usage: cast ResearchNode to the interface
+((IResearchNodeFriend)researchNode).CancelResearch();
+```
+
+**Important:** `ResearchManager.StopResearch()` calls `CancelResearch()` AND `m_researchQueue.Clear()` — it clears the entire queue. To cancel just the current research without losing the queue, call `CancelResearch()` directly via the interface, then clear `CurrentResearch` via reflection.
+
+### ResearchNode Progress Properties
+
+```csharp
+ResearchNode node = researchManager.CurrentResearch.ValueOrNull;
+node.ProgressInPerc        // Percent — progress done on research
+node.StepsDone             // long — completed science points
+node.RemainingSteps        // long — remaining science points
+node.ScienceCost           // long — total cost (first un-researched level if multi-level)
+node.State                 // ResearchNodeState — InProgress, Researched, NotResearched, etc.
+```
+
+### ResearchManager Key Properties
+
+```csharp
+researchManager.CurrentResearch   // Option<ResearchNode> — currently researching node
+researchManager.HasActiveLab      // bool — true if any research lab is enabled and working
+researchManager.TryStartResearch(proto, out errorMsg)  // public method to start research
+```
+
+### Button Variants (`Mafi.Unity.UiToolkit.Library.Button`)
+
+Static `ButtonVariant` fields on `Button` class:
+
+| Field | Use |
+|-------|-----|
+| `Button.Primary` | Main action (styled, bold) |
+| `Button.General` | Standard button |
+| `Button.Danger` | Destructive action (red) |
+| `Button.Warning` | Caution action (yellow) |
+| `Button.IconOnly` | Icon-only, no text |
+| `Button.IconOnlyDanger` | Icon-only, danger style |
+
+```csharp
+// Icon button with danger styling (e.g., cancel button)
+var cancelBtn = new ButtonIcon(Button.Danger,
+    "Assets/Unity/UserInterface/General/Cancel.svg",
+    () => { /* onClick */ });
+```
+
 ### Approaches That DO NOT Work in Update 4
 
 - **`Window` base class** — exists in `Mafi.Unity.UiToolkit.Library` but is NOT public. Compiles (accessible to mods) but never renders.
