@@ -381,10 +381,13 @@ public class ResearchReorderWindowController {
 		Action<int, int> onMoveRequested) {
 
 		if (queueItems.Count == 0) {
+			var emptyRow = new Row();
+			emptyRow.JustifyItemsCenter().FlexGrow(1f);
 			var emptyLabel = new Label(new LocStrFormatted("Queue is empty"));
-			emptyLabel.FontSize(14);
-			container.Add(emptyLabel);
-			trackingList.Add(emptyLabel);
+			emptyLabel.FontSize(14).TextCenterMiddle();
+			emptyRow.Add(emptyLabel);
+			container.Add(emptyRow);
+			trackingList.Add(emptyRow);
 			return;
 		}
 

@@ -980,6 +980,17 @@ component.TextLeftMiddle()              // Left-align, vertically centered
 component.TextRightMiddle()             // Right-align
 ```
 
+**Gotcha — centering a label in a column/scroll container:**
+`TextCenterMiddle()` alone on a `Label` inside a `ScrollColumn` or `Column` won't visually center it — the label element only takes up as much width/height as its text. To center both horizontally and vertically, wrap the label in a `Row` with `JustifyItemsCenter()` and `FlexGrow(1f)`:
+```csharp
+var row = new Row();
+row.JustifyItemsCenter().FlexGrow(1f);
+var label = new Label(new LocStrFormatted("Centered text"));
+label.TextCenterMiddle();
+row.Add(label);
+container.Add(row);
+```
+
 ### Creating Text Strings: `LocStrFormatted` (`Mafi.Localization` in `Mafi.dll`)
 
 `LocStrFormatted` is a **struct** (value type) used for all UI text. Located in `Mafi.dll`, not `Mafi.Core.dll`.
