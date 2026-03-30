@@ -4,24 +4,20 @@
 
 ### A mod for **Captain of Industry** that lets you manage and reorder your research queue
 
-[![Latest Release](https://img.shields.io/github/v/release/Jagg111/ResearchReorder-COI-Mod?label=Latest%20Release&style=for-the-badge)](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases/latest)
-[![Game Version](https://img.shields.io/badge/Game_Version-Update_4+-blue?style=for-the-badge)](https://store.steampowered.com/app/1594320/Captain_of_Industry/)
+[![Last Updated](https://img.shields.io/github/release-date/Jagg111/ResearchReorder-COI-Mod?label=Mod%20Last%20Updated&style=flat)](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases/latest)
+[![Update 4 Compatible](https://img.shields.io/badge/COI-Update_4_Compatible-green?style=flat)](https://store.steampowered.com/app/1594320/Captain_of_Industry/)
 
----
-
-**[⬇️ Download Latest Release](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases/latest)**
-
----
+**[⬇️ Download Latest Version](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases/latest)**
 
 </div>
-
-![Research Queue panel inside the research tree](screenshots/current.jpg)
 
 ## 🎯 Why This Mod?
 
 You've queued up 15 research items, everything is humming along nicely... and then a new project pops up that needs something buried at #8 in your queue. Without this mod, your only option is to remove items one by one and re-add them in the right order. 😩
 
 **Research Queue** gives you a simple drag-and-drop panel right inside the research tree so you can reorder your queue in seconds. 🎉
+
+![Research Queue panel inside the research tree](screenshots/current.jpg)
 
 ## ✨ Features
 
@@ -45,7 +41,7 @@ You've queued up 15 research items, everything is humming along nicely... and th
        manifest.json
    ```
 4. Launch the game and in the main menu enable the mod when loading your save
-5. Open the research tree (hotkey G by default) - the queue panel appears on the right side when no research nodes are select
+5. Open the research tree (hotkey `G` by default) - the queue panel appears on the right side when no research nodes are select
 
 <details>
 <summary><strong>📁 Can't find your Mods folder?</strong></summary>
