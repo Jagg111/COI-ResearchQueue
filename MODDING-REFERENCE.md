@@ -108,7 +108,7 @@ The queue is `Queueue<ResearchNode>` (`Mafi.Collections.Queueue`), a custom Mafi
 | Class | When to use |
 |---|---|
 | `DataOnlyMod` | Simple mods that only modify data/prototypes |
-| `IMod` | Full mods with UI, patches, and lifecycle hooks (**ResearchReorder uses this**) |
+| `IMod` | Full mods with UI, patches, and lifecycle hooks (**ResearchQueue uses this**) |
 
 ### `IMod` Implementation (Update 4 — verified working)
 
@@ -1645,7 +1645,7 @@ For mods that need DI registration or initialization, implement `IMod` directly.
 Our setup is minimal and correct for Update 4:
 - **.NET Framework:** net48
 - **Unity modules:** CoreModule, UIElementsModule
-- **Deployment:** Post-build copy to `%APPDATA%/Captain of Industry/Mods/ResearchReorder/`
+- **Deployment:** Post-build copy to `%APPDATA%/Captain of Industry/Mods/ResearchQueue/`
 
 Only add Harmony and extra Unity references when actually needed.
 

@@ -1,4 +1,4 @@
-# Implementation Plan — ResearchReorder Mod
+# Implementation Plan — ResearchQueue Mod
 
 ## Overall Approach
 
@@ -26,7 +26,7 @@ Phased, iterative development. Each phase is a small testable increment verified
 - [x] Get ANY mod-created window to appear on screen
 - [x] Abandon `Window` base class (not public in Update 4) and `WindowView`/`BaseWindowController` (don't exist)
 - [x] Use `PanelWithHeader` (UiToolkit) + `IToolbarItemController` + `ToolbarHud` pattern
-- [x] Implement `ResearchReorderWindowController` with F9 hotkey via `ToolbarHud.AddMainMenuButton()`
+- [x] Implement `ResearchQueueWindowController` with F9 hotkey via `ToolbarHud.AddMainMenuButton()`
 - [x] Register window panel via `ToolbarHud.AddToolWindow()`
 - [x] Remove `ForceVisible()` hack from Initialize()
 - [x] Verify in-game: press F9 → "Research Queue" panel appears, F9 again hides it
@@ -53,7 +53,7 @@ Phased, iterative development. Each phase is a small testable increment verified
 - [x] **4b: Inject queue panel as sibling** — Get `ResearchDetailUi`'s parent Row, create our `Panel` and `Add()` it as a sibling. Verify it renders next to or overlapping the detail panel area.
 - [x] **4c: Wire up visibility toggle** — Poll `m_selectedNode` field via `schedule.Execute()` loop: when empty → show queue panel + force-hide `ResearchDetailUi`; when has value → wait for `ResearchDetailUi.IsVisible()` then hide queue panel. Independent of F9 window.
 - [x] **4d: Port queue UI** — Embedded panel uses `Panel` (same base as `ResearchDetailUi`) with native styling: `Label` for text (not `Display`), `.FontBold().FontSize(15)` title, `ScrollColumn` body. Queue rows built via `BuildQueueRows` helper. Arrow buttons reorder the actual queue and refresh the embedded view.
-- [x] **4e: Remove standalone F9 window** — Embedded panel is functional. Removed `IToolbarItemController` implementation, F9 hotkey, `ToolbarHud` registration, and `ResearchReorderWindowView` class. Moved `BuildQueueRows` into the controller. `ToolbarHud` kept as constructor dependency solely for scheduling (via `m_mainContainer` reflection).
+- [x] **4e: Remove standalone F9 window** — Embedded panel is functional. Removed `IToolbarItemController` implementation, F9 hotkey, `ToolbarHud` registration, and `ResearchQueueWindowView` class. Moved `BuildQueueRows` into the controller. `ToolbarHud` kept as constructor dependency solely for scheduling (via `m_mainContainer` reflection).
 - [x] **4f: Escape behavior** — Confirmed: first Escape deselects node and shows queue panel, second Escape closes research tree. No extra code needed.
 - [x] **4g: In-game verification** — Full flow confirmed: open research tree → see queue → click node → see details → click empty space → see queue again → Escape closes tree.
 - [x] Update manifest version — bumped to 0.0.2
@@ -189,7 +189,7 @@ When the player deselects (clicks empty space or presses Escape):
 
 #### Phase 4 Strategy (Reflection-Based, No Harmony) — IMPLEMENTED
 
-All steps below are implemented and working. See `ResearchReorderWindowController.cs` for the final code.
+All steps below are implemented and working. See `ResearchQueueWindowController.cs` for the final code.
 
 **Step 1: Find the ResearchWindow instance** — Match `ResearchWindow+Controller` in `resolver.AllResolvedInstances` by `FullName`. Get `m_window` field from base class `WindowController<ResearchWindow>`, unwrap `Option<T>`. Window is lazily created; `ScheduleDeferredExtraction` retries on first open.
 

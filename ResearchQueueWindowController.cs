@@ -15,7 +15,7 @@ using Mafi.Unity.UiToolkit.Component;
 using Mafi.Unity.UiToolkit.Component.Manipulators;
 using Mafi.Unity.UiToolkit.Library;
 
-namespace ResearchReorder;
+namespace ResearchQueue;
 
 /// <summary>
 /// Discovers the game's ResearchWindow and injects a queue panel into it.
@@ -23,7 +23,7 @@ namespace ResearchReorder;
 /// with a live progress bar, plus the research queue with reorder buttons.
 /// </summary>
 [GlobalDependency(RegistrationMode.AsEverything)]
-public class ResearchReorderWindowController {
+public class ResearchQueueWindowController {
 
 	private readonly ResearchManager _researchMgr;
 	private readonly FieldInfo _queueField;
@@ -54,7 +54,7 @@ public class ResearchReorderWindowController {
 	private PropertyInfo _currentResearchProp;   // Cached: CurrentResearch property on ResearchManager
 	private MethodInfo _refreshQueueMethod;      // Cached: refreshQueueValues() on ResearchManager
 
-	public ResearchReorderWindowController(
+	public ResearchQueueWindowController(
 		ToolbarHud toolbar,
 		ResearchManager researchManager,
 		DependencyResolver resolver,
@@ -69,7 +69,7 @@ public class ResearchReorderWindowController {
 				BindingFlags.NonPublic | BindingFlags.Instance);
 			_schedulerSource = containerField?.GetValue(toolbar) as UiComponent;
 		} catch (Exception ex) {
-			Log.Warning($"ResearchReorder: Could not get scheduler source: {ex.Message}");
+			Log.Warning($"ResearchQueue: Could not get scheduler source: {ex.Message}");
 		}
 
 		// Cache the reflection field for queue access
@@ -79,7 +79,7 @@ public class ResearchReorderWindowController {
 		);
 
 		if (_queueField == null) {
-			Log.Error("ResearchReorder: Could not find m_researchQueue field!");
+			Log.Error("ResearchQueue: Could not find m_researchQueue field!");
 		}
 
 		// Cache reflection for current research manipulation
@@ -105,13 +105,13 @@ public class ResearchReorderWindowController {
 			if (_windowField != null) {
 				TryExtractResearchWindow();
 				if (!_researchWindowFound) {
-					Log.Info("ResearchReorder: ResearchWindow not yet created — will retry on open");
+					Log.Info("ResearchQueue: ResearchWindow not yet created — will retry on open");
 				}
 			} else {
-				Log.Warning("ResearchReorder: m_window field NOT found on WindowController base type");
+				Log.Warning("ResearchQueue: m_window field NOT found on WindowController base type");
 			}
 		} else {
-			Log.Warning("ResearchReorder: ResearchWindow+Controller NOT found in DI");
+			Log.Warning("ResearchQueue: ResearchWindow+Controller NOT found in DI");
 		}
 
 		if (_researchWindowFound) {
@@ -121,7 +121,7 @@ public class ResearchReorderWindowController {
 		_inputMgr.ControllerActivated += OnControllerActivated;
 		_inputMgr.ControllerDeactivated += OnControllerDeactivated;
 
-		Log.Info("ResearchReorder: Controller constructed");
+		Log.Info("ResearchQueue: Controller constructed");
 	}
 
 	/// <summary>
@@ -143,7 +143,7 @@ public class ResearchReorderWindowController {
 		_researchWindow = valueProp.GetValue(optionValue);
 		if (_researchWindow != null) {
 			_researchWindowFound = true;
-			Log.Info("ResearchReorder: ResearchWindow found!");
+			Log.Info("ResearchQueue: ResearchWindow found!");
 		}
 	}
 
@@ -185,14 +185,14 @@ public class ResearchReorderWindowController {
 				if (!_researchWindowFound) TryExtractResearchWindow();
 				if (_researchWindowFound) {
 					TryInjectPanel();
-					Log.Info($"ResearchReorder: Deferred extraction succeeded on attempt {attempt}!");
+					Log.Info($"ResearchQueue: Deferred extraction succeeded on attempt {attempt}!");
 				} else {
 					ScheduleDeferredExtraction(attempt + 1);
 				}
 			});
 		}
 		catch (Exception ex) {
-			Log.Warning($"ResearchReorder: ScheduleDeferredExtraction failed: {ex.Message}");
+			Log.Warning($"ResearchQueue: ScheduleDeferredExtraction failed: {ex.Message}");
 		}
 	}
 
@@ -208,13 +208,13 @@ public class ResearchReorderWindowController {
 		try {
 			var rwComponent = _researchWindow as UiComponent;
 			if (rwComponent == null) {
-				Log.Warning("ResearchReorder: ResearchWindow is not a UiComponent");
+				Log.Warning("ResearchQueue: ResearchWindow is not a UiComponent");
 				return;
 			}
 
 			var contentRow = FindParentOfType(rwComponent, "ResearchDetailUi");
 			if (contentRow == null) {
-				Log.Warning("ResearchReorder: Could not find parent Row of ResearchDetailUi");
+				Log.Warning("ResearchQueue: Could not find parent Row of ResearchDetailUi");
 				return;
 			}
 
@@ -245,7 +245,7 @@ public class ResearchReorderWindowController {
 					BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
 				if (minWidthField != null) {
 					panelWidth = (Px)minWidthField.GetValue(null);
-					Log.Info($"ResearchReorder: Using native MIN_WIDTH = {panelWidth}");
+					Log.Info($"ResearchQueue: Using native MIN_WIDTH = {panelWidth}");
 				}
 			}
 			_injectedPanel.Width(panelWidth);
@@ -312,11 +312,11 @@ public class ResearchReorderWindowController {
 				_injectedPanel.SetVisible(true);
 				RefreshEmbeddedPanel();
 				StartVisibilityPolling();
-				Log.Info("ResearchReorder: Queue panel injected into research tree!");
+				Log.Info("ResearchQueue: Queue panel injected into research tree!");
 			});
 		}
 		catch (Exception ex) {
-			Log.Warning($"ResearchReorder: Failed to inject panel: {ex.Message}");
+			Log.Warning($"ResearchQueue: Failed to inject panel: {ex.Message}");
 		}
 	}
 
@@ -386,7 +386,7 @@ public class ResearchReorderWindowController {
 
 	private void StartVisibilityPolling() {
 		if (_injectedPanel == null || _selectedNodeField == null || _hasValueProp == null) {
-			Log.Warning("ResearchReorder: Cannot start visibility polling — missing references");
+			Log.Warning("ResearchQueue: Cannot start visibility polling — missing references");
 			return;
 		}
 
@@ -401,7 +401,7 @@ public class ResearchReorderWindowController {
 			UpdatePanelVisibility();
 			UpdateProgressBar();
 		} catch (Exception ex) {
-			Log.Warning($"ResearchReorder: Visibility poll error: {ex.Message}");
+			Log.Warning($"ResearchQueue: Visibility poll error: {ex.Message}");
 			_pollingActive = false;
 			return;
 		}
@@ -475,7 +475,7 @@ public class ResearchReorderWindowController {
 
 		_refreshQueueMethod?.Invoke(_researchMgr, null);
 		RefreshEmbeddedPanel();
-		Log.Info($"ResearchReorder: Cancelled '{current.Proto.Strings.Name.TranslatedString}'");
+		Log.Info($"ResearchQueue: Cancelled '{current.Proto.Strings.Name.TranslatedString}'");
 	}
 
 	/// <summary>
@@ -506,7 +506,7 @@ public class ResearchReorderWindowController {
 
 		_refreshQueueMethod?.Invoke(_researchMgr, null);
 		RefreshEmbeddedPanel();
-		Log.Info($"ResearchReorder: Promoted '{promoted.Proto.Strings.Name.TranslatedString}' to active research");
+		Log.Info($"ResearchQueue: Promoted '{promoted.Proto.Strings.Name.TranslatedString}' to active research");
 	}
 
 	/// <summary>
@@ -519,7 +519,7 @@ public class ResearchReorderWindowController {
 		var removed = queue.PopAt(queueIndex);
 		_refreshQueueMethod?.Invoke(_researchMgr, null);
 		RefreshEmbeddedPanel();
-		Log.Info($"ResearchReorder: Removed '{removed.Proto.Strings.Name.TranslatedString}' from queue");
+		Log.Info($"ResearchQueue: Removed '{removed.Proto.Strings.Name.TranslatedString}' from queue");
 	}
 
 	/// <summary>
@@ -532,13 +532,13 @@ public class ResearchReorderWindowController {
 		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
 
 		if (fromIndex < 0 || fromIndex >= queue.Count || toIndex < 0 || toIndex >= queue.Count) {
-			Log.Warning($"ResearchReorder: Invalid move {fromIndex} -> {toIndex} (queue size {queue.Count})");
+			Log.Warning($"ResearchQueue: Invalid move {fromIndex} -> {toIndex} (queue size {queue.Count})");
 			return;
 		}
 
 		var item = queue.PopAt(fromIndex);
 		queue.EnqueueAt(item, toIndex);
-		Log.Info($"ResearchReorder: Moved '{item.Proto.Strings.Name.TranslatedString}' from {fromIndex} to {toIndex}");
+		Log.Info($"ResearchQueue: Moved '{item.Proto.Strings.Name.TranslatedString}' from {fromIndex} to {toIndex}");
 
 		RefreshEmbeddedPanel();
 	}

@@ -1,4 +1,4 @@
-# Captain of Industry Mod — ResearchReorder
+# Captain of Industry Mod — ResearchQueue
 
 ## Project Overview
 
@@ -9,7 +9,7 @@ The user developing the mod and prompting is a non-programmer (technical product
 ## Mod Identity
 
 - **Author:** Jagg111
-- **Mod ID:** `ResearchReorder`
+- **Mod ID:** `ResearchQueue`
 - **Game:** Captain of Industry (Update 4+)
 - **Framework:** Mafi (.NET 4.8)
 - **Mod type:** `IMod` (upgraded from DataOnlyMod to access Initialize() and DI)
@@ -17,10 +17,10 @@ The user developing the mod and prompting is a non-programmer (technical product
 ## Project Structure
 
 ```
-ResearchReorder.sln          # Visual Studio solution
-ResearchReorder.csproj       # Project file (build config, references, auto-deploy)
-ResearchReorder.cs           # Main mod entry point
-ResearchReorderWindowController.cs  # Queue panel injected into research tree (auto-registered via DI)
+ResearchQueue.sln          # Visual Studio solution
+ResearchQueue.csproj       # Project file (build config, references, auto-deploy)
+ResearchQueue.cs           # Main mod entry point
+ResearchQueueWindowController.cs  # Queue panel injected into research tree (auto-registered via DI)
 manifest.json                # Mod metadata (id, version, authors, dependencies, etc.)
 bin/                         # Build output (gitignored)
 obj/                         # Build intermediates (gitignored)
@@ -33,17 +33,17 @@ obj/                         # Build intermediates (gitignored)
 - `COI_MODS` — auto-set to `%APPDATA%\Captain of Industry\Mods` in the .csproj
 
 ### Build
-Open `ResearchReorder.sln` in Visual Studio and build, or run:
+Open `ResearchQueue.sln` in Visual Studio and build, or run:
 ```
 dotnet build /p:LangVersion=latest
 ```
 
-On build, the mod is automatically deployed to `%APPDATA%\Captain of Industry\Mods\ResearchReorder\`.
+On build, the mod is automatically deployed to `%APPDATA%\Captain of Industry\Mods\ResearchQueue\`.
 
 ### What gets deployed
-- `ResearchReorder.dll` — compiled mod
+- `ResearchQueue.dll` — compiled mod
 - `manifest.json` — mod metadata
-- `ResearchReorder.pdb` — debug symbols (Debug builds only)
+- `ResearchQueue.pdb` — debug symbols (Debug builds only)
 
 ## Modding Reference
 
