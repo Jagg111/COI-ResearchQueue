@@ -344,8 +344,8 @@ public class ResearchQueueWindowController {
 		}
 		_embeddedRows.Clear();
 
-		var items = ReadQueueItems();
-		BuildQueueRows(_embeddedScroll, _embeddedRows, items);
+		var nodes = ReadQueueNodes();
+		BuildQueueRows(_embeddedScroll, _embeddedRows, nodes);
 	}
 
 	/// <summary>
@@ -522,6 +522,16 @@ public class ResearchQueueWindowController {
 		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
 		if (queueIndex < 0 || queueIndex >= queue.Count) return;
 
+		// Safety check: don't promote items whose prerequisites aren't met.
+		// The UI hides the promote button for locked items, but this guards
+		// against edge cases (e.g., state changing between render and click).
+		var candidate = queue[queueIndex];
+		if (candidate.IsLocked) {
+			Log.Warning($"ResearchQueue: Cannot promote '{candidate.Proto.Strings.Name.TranslatedString}' — prerequisites not met");
+			RefreshEmbeddedPanel();
+			return;
+		}
+
 		var promoted = queue.PopAt(queueIndex);
 
 		// If something is currently being researched, cancel it and put it at queue front
@@ -580,32 +590,44 @@ public class ResearchQueueWindowController {
 	}
 
 	/// <summary>
-	/// Reads queue item names into a list.
+	/// Reads queue items into a list of ResearchNode objects.
 	/// </summary>
-	private List<string> ReadQueueItems() {
-		var items = new List<string>();
-		if (_queueField == null) {
-			items.Add("[Error: queue field not found]");
-			return items;
-		}
+	private List<ResearchNode> ReadQueueNodes() {
+		var items = new List<ResearchNode>();
+		if (_queueField == null) return items;
 
 		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
 		foreach (ResearchNode node in queue) {
-			items.Add(node.Proto.Strings.Name.TranslatedString);
+			items.Add(node);
 		}
 		return items;
 	}
 
 	/// <summary>
+	/// Returns the name of the first unresearched parent for a node, or null if all
+	/// parents are researched (i.e., the node can be started).
+	/// </summary>
+	private static string GetFirstUnresearchedParentName(ResearchNode node) {
+		foreach (var parent in node.Parents) {
+			if (parent.TimesResearched <= 0) {
+				return parent.Proto.Strings.Name.TranslatedString;
+			}
+		}
+		return null;
+	}
+
+	/// <summary>
 	/// Builds queue rows with drag handles for reordering, a promote button (▶)
 	/// to start researching that item, and a remove button (✕) to dequeue.
+	/// Items whose prerequisites aren't met show a "Needs: X" label instead of
+	/// the promote button, so the player knows why it can't be started.
 	/// </summary>
 	private void BuildQueueRows(
 		UiComponent container,
 		List<UiComponent> trackingList,
-		List<string> queueItems) {
+		List<ResearchNode> queueNodes) {
 
-		if (queueItems.Count == 0) {
+		if (queueNodes.Count == 0) {
 			var emptyLabel = new Label(new LocStrFormatted("Empty"));
 			emptyLabel.FontSize(14).TextCenterMiddle();
 			container.Add(emptyLabel);
@@ -613,8 +635,10 @@ public class ResearchQueueWindowController {
 			return;
 		}
 
-		for (int i = 0; i < queueItems.Count; i++) {
+		for (int i = 0; i < queueNodes.Count; i++) {
 			int index = i; // capture for closure
+			var node = queueNodes[i];
+			bool isLocked = node.IsLocked;
 
 			var row = new Row(1.pt());
 			row.MarginBottom(3.px());
@@ -635,18 +659,28 @@ public class ResearchQueueWindowController {
 			row.Add(dragCol);
 
 			// Research name label
-			var label = new Label(new LocStrFormatted(queueItems[i]));
+			var label = new Label(new LocStrFormatted(
+				node.Proto.Strings.Name.TranslatedString));
 			label.FontSize(15).FlexGrow(1f).Margin(2.px());
 			row.Add(label);
 
-			// Promote button — start researching this item now
-			var promoteBtn = new ButtonText(Button.Primary, new LocStrFormatted("\u25b6"));
-			promoteBtn.OnClick((Action)(() => PromoteToActive(index)), allowKeyPresses: false);
-			row.Add(promoteBtn);
+			if (isLocked) {
+				// Show why this item can't be started
+				var blockerName = GetFirstUnresearchedParentName(node) ?? "prerequisites";
+				var needsLabel = new Label(new LocStrFormatted($"Needs: {blockerName}"));
+				needsLabel.FontSize(12).Opacity(0.6f).Margin(2.px());
+				row.Add(needsLabel);
+			} else {
+				// Promote button — start researching this item now
+				var promoteBtn = new ButtonText(Button.Primary, new LocStrFormatted("\u25b6"));
+				promoteBtn.OnClick((Action)(() => PromoteToActive(index)), allowKeyPresses: false);
+				row.Add(promoteBtn);
+			}
 
-			// Remove button — gray text button matching native ResearchDetailUi "Remove from queue"
-			var removeBtn = new ButtonText(Tr.ResearchQueue__Remove);
-			removeBtn.OnClick((Action)(() => RemoveFromQueue(index)), allowKeyPresses: false);
+			// Remove button — compact red X icon matching the current research cancel button
+			var removeBtn = new ButtonIcon(Button.Danger,
+				"Assets/Unity/UserInterface/General/Cancel.svg",
+				() => RemoveFromQueue(index));
 			row.Add(removeBtn);
 
 			// Wire up drag-and-drop reordering via the game's Reorderable manipulator
