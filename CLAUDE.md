@@ -93,12 +93,12 @@ This project uses **Semantic Versioning** (`MAJOR.MINOR.PATCH`):
 
 **Rules:**
 - Do NOT bump for docs-only, build script, or comment-only changes
-- If unsure whether something is a minor or patch, **it's a patch**
+- If unsure then remind the user about semenatic versioning and ask what their preference is
 - `manifest.json` version is always the source of truth
 
 **End-of-session workflow:**
 1. If code changes were made during the session, ask the user if a version bump is needed
-2. If yes, bump `manifest.json`, commit the change, and run `.\create-github-release.ps1` to create a GitHub draft release
+2. If yes, bump `manifest.json`, prompt the user to commit the change (remind them to tag github issues), and run `.\create-github-release.ps1` to create a GitHub draft release
 3. The user can then go directly to GitHub and approve the draft
 
 ## Documentation Rules (IMPORTANT)
