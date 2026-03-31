@@ -30,7 +30,7 @@ You've queued up 15 research items, everything is humming along nicely... and th
 ## 📦 Installation
 
 1. **[⬇️ Download the latest release](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases/latest)** (`.zip` file)
-2. Extract the **`ResearchQueue`** folder into your mods directory:
+2. Copy the **`ResearchQueue`** folder into your mods directory:
    ```
    %APPDATA%\Captain of Industry\Mods\
    ```
@@ -41,7 +41,7 @@ You've queued up 15 research items, everything is humming along nicely... and th
        manifest.json
    ```
 4. Launch the game and in the main menu enable the mod when loading your save
-5. Open the research tree (hotkey `G` by default) - the queue panel appears on the right side when no research nodes are select
+5. Open the research tree (hotkey `G` by default) - the queue panel appears on the right side when no research nodes are selected
 
 <details>
 <summary><strong>📁 Can't find your Mods folder?</strong></summary>

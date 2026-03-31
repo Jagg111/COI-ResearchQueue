@@ -109,6 +109,17 @@ if (-not (Test-Path $zipPath)) {
     Fail "Release zip was not created at $zipPath"
 }
 
+$repoUrl = "https://github.com/Jagg111/COI-ResearchQueue"
+
+# Emoji characters (defined via codepoint so the .ps1 file stays ASCII-safe)
+$emojiSparkles  = [char]::ConvertFromUtf32(0x2728)   # ✨
+$emojiWarning   = [char]::ConvertFromUtf32(0x26A0) + [char]::ConvertFromUtf32(0xFE0F)  # ⚠️
+$emojiPackage   = [char]::ConvertFromUtf32(0x1F4E6)  # 📦
+$emojiDownArrow = [char]::ConvertFromUtf32(0x2B07) + [char]::ConvertFromUtf32(0xFE0F)  # ⬇️
+$emojiFolder    = [char]::ConvertFromUtf32(0x1F4C1)  # 📁
+
+# --- What's New: clean commit messages with auto-linked issue references ---
+
 $previousTag = ""
 $previousTags = @(& git tag --sort=-creatordate)
 if ($LASTEXITCODE -eq 0 -and $previousTags.Count -gt 0) {
@@ -116,11 +127,9 @@ if ($LASTEXITCODE -eq 0 -and $previousTags.Count -gt 0) {
 }
 
 if ($previousTag) {
-    $commitArgs = @("log", "$previousTag..HEAD", "--pretty=format:%s|%h")
-    $changeHeading = "## Changes since $previousTag"
+    $commitArgs = @("log", "$previousTag..HEAD", "--pretty=format:%s")
 } else {
-    $commitArgs = @("log", "HEAD", "--pretty=format:%s|%h")
-    $changeHeading = "## Changes included in this release"
+    $commitArgs = @("log", "HEAD", "--pretty=format:%s")
 }
 
 $commitLines = @(& git @commitArgs)
@@ -134,58 +143,80 @@ foreach ($line in $commitLines) {
         continue
     }
 
-    $parts = $line -split "\|", 2
-    $subject = $parts[0].Trim()
-    $hash = if ($parts.Count -gt 1) { $parts[1].Trim() } else { "" }
+    $subject = $line.Trim()
 
-    if ($hash) {
-        $commitBullets += ('- {0} (`{1}`)' -f $subject, $hash)
-    } else {
-        $commitBullets += "- $subject"
-    }
+    # Convert #N issue references to markdown links
+    $subject = [regex]::Replace($subject, '#(\d+)', "[#`$1]($repoUrl/issues/`$1)")
+
+    $commitBullets += "- $subject"
 }
 
 if ($commitBullets.Count -eq 0) {
-    $commitBullets += "- No commits found."
+    $commitBullets += "- No changes found."
 }
 
+# --- Known Issues: auto-pull open issues with 'bug' label ---
+
+$knownIssueBullets = @()
+if (Get-Command gh -ErrorAction SilentlyContinue) {
+    $bugIssues = Invoke-Gh -Arguments @("issue", "list", "--label", "bug", "--state", "open", "--json", "number,title")
+    if ($bugIssues.ExitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace($bugIssues.StdOut)) {
+        $issues = $bugIssues.StdOut | ConvertFrom-Json
+        foreach ($issue in $issues) {
+            $knownIssueBullets += "- $($issue.title) (issue [#$($issue.number)]($repoUrl/issues/$($issue.number)))"
+        }
+    }
+}
+
+# --- Build release notes ---
+
 $notes = @(
-    "# $title",
-    "",
-    $changeHeading,
+    "## $emojiSparkles What's New",
     ""
 )
-
 $notes += $commitBullets
+
+if ($knownIssueBullets.Count -gt 0) {
+    $notes += @(
+        "",
+        "## $emojiWarning Known Issues",
+        ""
+    )
+    $notes += $knownIssueBullets
+}
+
 $notes += @(
     "",
-    "## Installation",
-    "",
-    "1. Download the **ResearchQueue.zip** file below",
-    "2. Copy the ``ResearchQueue`` folder into your mods directory:",
+    "## $emojiPackage Installation",
+    "1. $emojiDownArrow Download the **ResearchQueue.zip** file below",
+    "2. Extract the zip file",
+    "3. Copy the **``ResearchQueue``** folder into your mods directory:",
     "   ``````",
     "   %APPDATA%\Captain of Industry\Mods\",
     "   ``````",
-    "   The final structure should look like:",
+    "4. Your folder structure should look like this:",
     "   ``````",
     "   Captain of Industry\Mods\ResearchQueue\",
     "       ResearchQueue.dll",
     "       manifest.json",
     "   ``````",
-    "3. Launch the game",
-    "4. Go to load your save and enable the mod",
-    "5. Open the research tree -- the queue panel appears on the right side",
+    "5. Launch the game and in the main menu enable the mod when loading your save",
+    "6. Open the research tree (hotkey ``G`` by default) - the queue panel appears on the right side when no research nodes are selected",
     "",
-    "### Finding your Mods folder",
+    "<details>",
+    "<summary><strong>$emojiFolder Can't find your Mods folder?</strong></summary>",
     "",
-    "Press **Win + R**, paste this path, and hit Enter:",
+    "Press ``Win + R``, paste this path, and hit Enter:",
     "``````",
     "%APPDATA%\Captain of Industry\Mods",
     "``````",
-    "If the ``Mods`` folder doesn't exist yet, create it."
+    "If the ``Mods`` folder doesn't exist yet, create it.",
+    "",
+    "</details>"
 )
 
-Set-Content -LiteralPath $notesPath -Value ($notes -join [Environment]::NewLine)
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($notesPath, ($notes -join [Environment]::NewLine), $utf8NoBom)
 
 if ($PackageOnly) {
     Write-Host "Package created without GitHub draft release:"
