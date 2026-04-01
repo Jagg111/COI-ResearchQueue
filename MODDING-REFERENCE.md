@@ -1522,6 +1522,98 @@ component.ObserveVisible(parentComponent, () => someCondition);
 
 These are auto-evaluated by the game's syncer/updater system — no manual polling or `schedule.Execute()` needed. Used extensively in `ResearchDetailUi` for title, progress bar, button visibility, and lock state.
 
+## Audio — Playing UI Sound Effects (`Mafi.Unity.Audio`)
+
+The game provides `AudioDb` for loading and playing sound effects. It is injectable via DI and used extensively by built-in controllers for feedback sounds (clicks, errors, placement confirmations, etc.).
+
+**Assembly reference required:** `UnityEngine.AudioModule.dll` (for `UnityEngine.AudioSource` return type).
+
+### `AudioDb` Class
+
+**Location:** `Mafi.Unity.Audio.AudioDb`
+**Injected via DI:** Yes — add `AudioDb audioDb` to your constructor.
+
+**Key methods:**
+
+```csharp
+// Returns a shared AudioSource for the given prefab path, routed through
+// the UserInterface audio channel. "Shared" means the same instance is
+// reused across callers — safe and efficient for UI sounds.
+public AudioSource GetSharedAudioUi(string prefabPath)
+
+// Same as above but lets you pick a different audio channel (Music, Machines, etc.)
+public AudioSource GetSharedAudio(string prefabPath, AudioChannel channel)
+
+// Returns a cloned (independent) AudioSource — use when you need to
+// control playback independently (e.g., overlapping sounds).
+public AudioSource GetClonedAudio(string prefabPath, AudioChannel channel)
+```
+
+### Playing a Sound
+
+```csharp
+// 1. Cache the sound in your constructor (don't fetch it every time)
+private readonly AudioSource _errorSound;
+
+public MyController(AudioDb audioDb) {
+    _errorSound = audioDb.GetSharedAudioUi("Assets/Unity/UserInterface/Audio/InvalidOp.prefab");
+}
+
+// 2. Play it when needed
+_errorSound.Play();
+```
+
+### Available UI Sound Prefabs
+
+All paths follow the pattern `Assets/Unity/UserInterface/Audio/{Name}.prefab`:
+
+| Prefab Name | Typical Use |
+|-------------|-------------|
+| `InvalidOp` | Error/invalid action feedback (the "bonk" sound) |
+| `ButtonClick` | Generic button press |
+| `AssignClick` | Assigning workers/vehicles |
+| `AssignStructure` | Assigning to a structure |
+| `BuildingPlaced` | Placing a building |
+| `Demolish` | Demolishing |
+| `EntitySelect` | Selecting an entity |
+| `EntityUnselect` | Deselecting an entity |
+| `MenuOpen` | Opening a menu/panel |
+| `MenuClose` | Closing a menu/panel |
+| `Up` | Moving something up/increasing |
+| `Down` | Moving something down/decreasing |
+| `Rotate` | Rotating a building |
+| `MoneyAction` | Unity coin transaction |
+| `NewMessage` | Notification/message arrived |
+| `Sell` | Selling something |
+| `CameraShutter` | Screenshot |
+| `ShipAlarm` | Ship alarm |
+| `SprayPaint` | Short paint/surface action |
+| `SprayPaintLong` | Extended paint action |
+| `DesignationRemove` | Removing a terrain designation |
+| `DumpApply` | Applying a dump designation |
+| `FlattenApply` | Applying a flatten designation |
+| `ForestryApply` | Applying a forestry designation |
+| `MiningApply` | Applying a mining designation |
+| `InspectorClick` | Clicking in an inspector |
+| `SurfaceApply` | Applying a surface (e.g., concrete) |
+| `SurfaceMetalApply` | Applying a metal surface |
+| `TransportBind` | Binding a transport |
+| `TransportUnbind` | Unbinding a transport |
+| `TransportSnapChange` | Changing transport snap point |
+
+### Audio Channels (`AudioChannel` enum)
+
+```csharp
+public enum AudioChannel {
+    Master,          // Controls master volume — don't put audio here directly
+    Music,
+    EffectsGroup,    // Controls sub-groups — don't put audio here directly
+    UserInterface,   // UI sounds (what GetSharedAudioUi uses)
+    Machines,
+    Weather
+}
+```
+
 ## Input Manager & Controller Interfaces (`Mafi.Unity.dll`)
 
 ### `IUnityInputMgr` (`Mafi.Unity` namespace)

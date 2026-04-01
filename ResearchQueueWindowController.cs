@@ -7,6 +7,7 @@ using Mafi.Core;
 using Mafi.Core.Research;
 using Mafi.Localization;
 using Mafi.Unity;
+using Mafi.Unity.Audio;
 using Mafi.Unity.InputControl;
 using Mafi.Unity.Ui.Hud;
 using Mafi.Unity.Ui.Library;
@@ -27,6 +28,7 @@ public class ResearchQueueWindowController {
 
 	private readonly ResearchManager _researchMgr;
 	private readonly FieldInfo _queueField;
+	private readonly UnityEngine.AudioSource _invalidOpSound;
 	private UiComponent _schedulerSource; // For deferred frame scheduling before panel exists
 
 	// Phase 4: ResearchWindow discovery
@@ -60,9 +62,11 @@ public class ResearchQueueWindowController {
 		ToolbarHud toolbar,
 		ResearchManager researchManager,
 		DependencyResolver resolver,
-		IUnityInputMgr inputMgr) {
+		IUnityInputMgr inputMgr,
+		AudioDb audioDb) {
 		_researchMgr = researchManager;
 		_inputMgr = inputMgr;
+		_invalidOpSound = audioDb.GetSharedAudioUi("Assets/Unity/UserInterface/Audio/InvalidOp.prefab");
 
 		// Get a UiComponent from ToolbarHud's internal container for frame scheduling.
 		// Needed by ScheduleDeferredExtraction before our injected panel exists.
@@ -637,17 +641,26 @@ public class ResearchQueueWindowController {
 		return null;
 	}
 
+	// ── Drag constraint helpers (issue #8) ──────────────────────────
+	// These three static methods compute the valid index range for a
+	// queue item during drag-and-drop. Together they prevent the player
+	// from placing a research above its unresearched prerequisites or
+	// below items that depend on it — which would cause the game to
+	// silently discard the out-of-order item on research completion.
+
 	/// <summary>
 	/// Returns the earliest (lowest) queue index a node can occupy without
 	/// sitting above any of its unresearched prerequisites in the queue.
+	/// Example: if node C depends on B (at index 2, unresearched), the
+	/// earliest valid index for C is 3 (one below B).
 	/// </summary>
 	private static int GetEarliestValidIndex(ResearchNode node, List<ResearchNode> queueNodes) {
 		int earliest = 0;
 		foreach (var parent in node.Parents) {
-			if (parent.TimesResearched > 0) continue;
+			if (parent.TimesResearched > 0) continue; // already researched, not blocking
 			for (int j = 0; j < queueNodes.Count; j++) {
 				if (ReferenceEquals(queueNodes[j], parent)) {
-					earliest = Math.Max(earliest, j + 1);
+					earliest = Math.Max(earliest, j + 1); // must be below this parent
 					break;
 				}
 			}
@@ -658,16 +671,18 @@ public class ResearchQueueWindowController {
 	/// <summary>
 	/// Returns the latest (highest) queue index a node can occupy without
 	/// sitting below any of its dependents that still need it as a prerequisite.
-	/// Since ResearchNode has no Children property, we derive dependents by
-	/// scanning all queue items' Parents.
+	/// ResearchNode has no Children property, so we derive dependents by
+	/// scanning all queue items' Parents for references to this node.
+	/// Example: if A is needed by B (at index 1), the latest valid index
+	/// for A is 0 (one above B).
 	/// </summary>
 	private static int GetLatestValidIndex(ResearchNode node, List<ResearchNode> queueNodes) {
 		int latest = queueNodes.Count - 1;
-		if (node.TimesResearched > 0) return latest;
+		if (node.TimesResearched > 0) return latest; // already researched, nothing depends on us
 		for (int i = 0; i < queueNodes.Count; i++) {
 			foreach (var parent in queueNodes[i].Parents) {
 				if (ReferenceEquals(parent, node) && parent.TimesResearched <= 0) {
-					latest = Math.Min(latest, i - 1);
+					latest = Math.Min(latest, i - 1); // must be above this dependent
 					break;
 				}
 			}
@@ -676,12 +691,14 @@ public class ResearchQueueWindowController {
 	}
 
 	/// <summary>
-	/// Computes the clamped target index for a drag operation. Simulates removing
-	/// the item from its original position (as PopAt would) before computing
-	/// valid bounds against the resulting queue state.
+	/// Computes the clamped target index for a drag operation. Builds a
+	/// temporary queue with the dragged item removed (simulating PopAt)
+	/// so that index math is correct relative to the post-removal state.
 	/// </summary>
 	private static int ClampMoveIndex(int fromIndex, int requestedToIndex, List<ResearchNode> queueNodes) {
 		var draggedNode = queueNodes[fromIndex];
+
+		// Build queue snapshot without the dragged item (PopAt shifts indices)
 		var tempQueue = new List<ResearchNode>(queueNodes.Count - 1);
 		for (int i = 0; i < queueNodes.Count; i++) {
 			if (i != fromIndex) tempQueue.Add(queueNodes[i]);
@@ -694,8 +711,9 @@ public class ResearchQueueWindowController {
 
 	/// <summary>
 	/// Drag callback that clamps the target index to the nearest valid position
-	/// before applying the move. If the item can't move from its current spot,
-	/// the panel refreshes to snap the visual state back.
+	/// before applying the move. Plays the game's native error sound when the
+	/// drop position was constrained. If the item can't move at all, the panel
+	/// refreshes to snap the visual state back to the original order.
 	/// </summary>
 	private void MoveItemClamped(int fromIndex, int toIndex) {
 		if (_queueField == null) return;
@@ -708,9 +726,16 @@ public class ResearchQueueWindowController {
 
 		int clampedTo = ClampMoveIndex(fromIndex, toIndex, queueNodes);
 
+		// Item couldn't move — snap back and play error cue
 		if (clampedTo == fromIndex) {
+			_invalidOpSound?.Play();
 			RefreshEmbeddedPanel();
 			return;
+		}
+
+		// Item moved but was clamped to a different slot than requested
+		if (clampedTo != toIndex) {
+			_invalidOpSound?.Play();
 		}
 
 		MoveItem(fromIndex, clampedTo);
