@@ -638,6 +638,85 @@ public class ResearchQueueWindowController {
 	}
 
 	/// <summary>
+	/// Returns the earliest (lowest) queue index a node can occupy without
+	/// sitting above any of its unresearched prerequisites in the queue.
+	/// </summary>
+	private static int GetEarliestValidIndex(ResearchNode node, List<ResearchNode> queueNodes) {
+		int earliest = 0;
+		foreach (var parent in node.Parents) {
+			if (parent.TimesResearched > 0) continue;
+			for (int j = 0; j < queueNodes.Count; j++) {
+				if (ReferenceEquals(queueNodes[j], parent)) {
+					earliest = Math.Max(earliest, j + 1);
+					break;
+				}
+			}
+		}
+		return earliest;
+	}
+
+	/// <summary>
+	/// Returns the latest (highest) queue index a node can occupy without
+	/// sitting below any of its dependents that still need it as a prerequisite.
+	/// Since ResearchNode has no Children property, we derive dependents by
+	/// scanning all queue items' Parents.
+	/// </summary>
+	private static int GetLatestValidIndex(ResearchNode node, List<ResearchNode> queueNodes) {
+		int latest = queueNodes.Count - 1;
+		if (node.TimesResearched > 0) return latest;
+		for (int i = 0; i < queueNodes.Count; i++) {
+			foreach (var parent in queueNodes[i].Parents) {
+				if (ReferenceEquals(parent, node) && parent.TimesResearched <= 0) {
+					latest = Math.Min(latest, i - 1);
+					break;
+				}
+			}
+		}
+		return latest;
+	}
+
+	/// <summary>
+	/// Computes the clamped target index for a drag operation. Simulates removing
+	/// the item from its original position (as PopAt would) before computing
+	/// valid bounds against the resulting queue state.
+	/// </summary>
+	private static int ClampMoveIndex(int fromIndex, int requestedToIndex, List<ResearchNode> queueNodes) {
+		var draggedNode = queueNodes[fromIndex];
+		var tempQueue = new List<ResearchNode>(queueNodes.Count - 1);
+		for (int i = 0; i < queueNodes.Count; i++) {
+			if (i != fromIndex) tempQueue.Add(queueNodes[i]);
+		}
+
+		int earliest = GetEarliestValidIndex(draggedNode, tempQueue);
+		int latest = GetLatestValidIndex(draggedNode, tempQueue);
+		return Math.Max(earliest, Math.Min(requestedToIndex, latest));
+	}
+
+	/// <summary>
+	/// Drag callback that clamps the target index to the nearest valid position
+	/// before applying the move. If the item can't move from its current spot,
+	/// the panel refreshes to snap the visual state back.
+	/// </summary>
+	private void MoveItemClamped(int fromIndex, int toIndex) {
+		if (_queueField == null) return;
+
+		var queueNodes = ReadQueueNodes();
+		if (fromIndex < 0 || fromIndex >= queueNodes.Count || toIndex < 0 || toIndex >= queueNodes.Count) {
+			RefreshEmbeddedPanel();
+			return;
+		}
+
+		int clampedTo = ClampMoveIndex(fromIndex, toIndex, queueNodes);
+
+		if (clampedTo == fromIndex) {
+			RefreshEmbeddedPanel();
+			return;
+		}
+
+		MoveItem(fromIndex, clampedTo);
+	}
+
+	/// <summary>
 	/// Builds queue rows with drag handles for reordering, a promote button (▶)
 	/// to start researching that item, and a remove button (✕) to dequeue.
 	/// Items whose prerequisites aren't met show a "Needs: X" label instead of
@@ -722,7 +801,7 @@ public class ResearchQueueWindowController {
 
 			// Wire up drag-and-drop reordering via the game's Reorderable manipulator
 			var reorderable = new Reorderable(dragCol.RootElement);
-			reorderable.OnOrderChanged += (oldIdx, newIdx) => MoveItem(oldIdx, newIdx);
+			reorderable.OnOrderChanged += (oldIdx, newIdx) => MoveItemClamped(oldIdx, newIdx);
 			row.AddManipulator(reorderable);
 
 			container.Add(row);
