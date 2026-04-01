@@ -1,48 +1,45 @@
 <div align="center">
 
-# 🔬 Research Queue
+# 🔬 Research Queue (Captain of Industry Mod)
 
-### A mod for **Captain of Industry** that lets you manage and reorder your research queue
+### Stop rebuilding your entire queue when you want to change it. Manage your queue directly in the research tree.
+![Research Queue panel inside the research tree](screenshots/current.gif)
 
-[![Last Updated](https://img.shields.io/github/release-date/Jagg111/ResearchReorder-COI-Mod?label=Mod%20Last%20Updated&style=flat)](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases/latest)
+[![Last Updated](https://img.shields.io/github/release-date/Jagg111/COI-ResearchQueue?label=Mod%20Last%20Updated&style=flat)](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)
 [![Update 4 Compatible](https://img.shields.io/badge/COI-Update_4_Compatible-green?style=flat)](https://store.steampowered.com/app/1594320/Captain_of_Industry/)
 
-**[⬇️ Download Latest Version](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases/latest)**
-
+**[⬇️ Download Latest Version](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)**
 </div>
 
 ## 🎯 Why This Mod?
 
-You've queued up 15 research items, everything is humming along nicely... and then a new project pops up that needs something buried at #8 in your queue. Without this mod, your only option is to remove items one by one and re-add them in the right order. 😩
+Without this mod, if you want to start a new research your only option is to blow out your enitre queue then add items back in one by one to rebuild your queue.There's also no way to rearrange your queue... 😩
 
-**Research Queue** gives you a simple drag-and-drop panel right inside the research tree so you can reorder your queue in seconds. 🎉
-
-![Research Queue panel inside the research tree](screenshots/current.jpg)
+**The Research Queue mod** solves this by adding a queue management panel directly inside the research tree.
 
 ## ✨ Features
 
+- 🎨 **Integrated UI** - panel appears directly inside the research tree and feels like a native feature of Captain of Industry
 - 🔀 **Drag-and-drop reordering** of your research queue
-- 🎨 **Integrated UI** - panel appears directly inside the research tree and uses native UI elements to feel like it's a standard feature in the game
-- 📊 **Shows current research** - see what's actively being researched and its progress
+- 📊 **Live research visibility** - see what's actively being researched and its progress
 - 💾 **Works on existing saves** - install and go, no new game required
-- 🛡️ **Safe to remove** - uninstall anytime; your queue stays in whatever order you left it
+
 
 ## 📦 Installation
 
-1. **[⬇️ Download the latest release](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases/latest)** (`.zip` file)
+1. **[⬇️ Download the latest release](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)** (`.zip` file)
 2. Extract the zip file
 3. Copy the **`ResearchQueue`** folder into your mods directory:
    ```
    %APPDATA%\Captain of Industry\Mods\
    ```
-4. Your folder structure should look like this:
+   Your folder structure should look like this:
    ```
    Captain of Industry\Mods\ResearchQueue\
        ResearchQueue.dll
        manifest.json
    ```
-5. Launch the game and in the main menu enable the mod when loading your save
-6. Open the research tree (hotkey `G` by default) - the queue panel appears on the right side when no research nodes are selected
+4. Launch the game and enable the mod when loading your save. In game open the research tree (hotkey `G` by default) - the queue panel appears on the right side when no research nodes are selected.
 
 <details>
 <summary><strong>📁 Can't find your Mods folder?</strong></summary>
@@ -60,47 +57,37 @@ If the `Mods` folder doesn't exist yet, create it.
 | | |
 |---|---|
 | 🎮 **Game version** | Update 4+ (0.8.2c verified) |
-| 💾 **Save compatible** | Yes - works on existing saves |
-| 🛡️ **Safe to remove** | Yes - queue stays in its current order |
+| 💾 **Save compatible** | Yes |
+| 🛡️ **Safe to remove** | Yes |
 | 🤝 **Other mods** | No known conflicts (yet) |
 
 ## ❓ FAQ
 
-<details>
-<summary><strong>Does this work with existing saves?</strong></summary>
+**Does this work with existing saves?**  
+✅ Yes! Just install and enable it when loading your save. No new game needed.
 
-✅ Yes! Just install and load your save. No new game needed.
+**What happens if I remove the mod?**  
+✅ Your queue stays exactly as-is. You just lose the panel and interface for managing it.
 
-</details>
+**Does this conflict with other mods?**  
+✅ No known conflicts. If you encounter any issues, please [let me know](https://github.com/Jagg111/COI-ResearchQueue/discussions/new?category=bug-reports)!
 
-<details>
-<summary><strong>What happens if I remove the mod?</strong></summary>
-
-✅ Nothing bad. Your research queue keeps whatever order it was in when you last played with the mod. You just lose the ability to reorder it via drag-and-drop.
-
-</details>
-
-<details>
-<summary><strong>Does this conflict with other mods?</strong></summary>
-
-✅ No known conflicts. The mod injects a panel into the research tree UI and manipulates the game's own internal queue - it doesn't replace or override any existing game systems.
-
-</details>
-
-<details>
-<summary><strong>Is this mod safe? Does it modify save files?</strong></summary>
-
-✅ The mod works with the game's existing research queue data. It doesn't create its own save data or modify save files directly - it just changes the order of items already in the queue.
+**Is this mod safe? Does it modify save files?**  
+✅ The mod uses the game's existing research queue data. It does not create its own save data or modify save files directly—it only changes the order of items already in the queue.
 
 </details>
 
 ## 🐛 Feedback & Bug Reports
 
-Found a bug or have a suggestion? [Open an issue on GitHub](https://github.com/Jagg111/ResearchReorder-COI-Mod/issues) - it's the easiest way to get a hold of me to get it looked at.
+Found a bug or have a suggestion? Join the [dicussions on GitHub](https://github.com/Jagg111/COI-ResearchQueue/discussions)!
 
 ## 📋 Changelog
 
-See the [Releases page](https://github.com/Jagg111/ResearchReorder-COI-Mod/releases) for version history and download links.
+See the [Releases page](https://github.com/Jagg111/COI-ResearchQueue/releases) for version history and download links.
+
+## ⭐ Support
+
+If you find this mod useful, consider starring the repo ⭐ — it helps others discover it!
 
 ## 🙏 Credits
 
