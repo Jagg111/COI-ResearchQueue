@@ -299,7 +299,7 @@ public class ResearchQueueWindowController {
 			queueHeader.FontBold().UpperCase();
 
 			_embeddedScroll = new ScrollColumn();
-			_embeddedScroll.FlexGrow(1f);
+			_embeddedScroll.ScrollerHidden(); // Hidden by default; UpdateScrollbarVisibility shows it when content overflows
 			_embeddedScroll.MaxHeight(320.px()); // Match native ResearchDetailUi MAX_RECIPES_HEIGHT
 
 			// Assemble everything
@@ -350,6 +350,13 @@ public class ResearchQueueWindowController {
 
 		var nodes = ReadQueueNodes();
 		BuildQueueRows(_embeddedScroll, _embeddedRows, nodes);
+
+		// Defer scrollbar visibility check by one frame so layout has been computed.
+		// A second nested check runs the frame after to catch gutter reflow when hiding.
+		_embeddedScroll.RootElement.schedule.Execute(() => {
+			UpdateScrollbarVisibility();
+			_embeddedScroll.RootElement.schedule.Execute(UpdateScrollbarVisibility);
+		});
 	}
 
 	/// <summary>
@@ -395,6 +402,29 @@ public class ResearchQueueWindowController {
 			if (result != null) return result;
 		}
 		return null;
+	}
+
+	/// <summary>
+	/// Called one frame after each panel rebuild to check whether the scroll content
+	/// actually overflows the viewport. Shows the scrollbar only when needed.
+	/// </summary>
+	private void UpdateScrollbarVisibility() {
+		if (_embeddedScroll == null) return;
+		var scrollView = _embeddedScroll.RootElement as UnityEngine.UIElements.ScrollView;
+		if (scrollView == null) {
+			Log.Warning("ResearchQueue: Could not get ScrollView for scrollbar visibility check");
+			return;
+		}
+
+		float contentHeight = scrollView.contentContainer.resolvedStyle.height;
+		float viewportHeight = scrollView.contentViewport.resolvedStyle.height;
+
+		if (float.IsNaN(contentHeight) || float.IsNaN(viewportHeight)) return;
+
+		if (contentHeight > viewportHeight)
+			_embeddedScroll.ScrollerAlwaysVisible();
+		else
+			_embeddedScroll.ScrollerHidden();
 	}
 
 	private void StartVisibilityPolling() {

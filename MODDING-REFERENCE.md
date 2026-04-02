@@ -1245,6 +1245,45 @@ scroll.DisableWheelScrolling()             // Disable mouse wheel scroll
 scroll.Clear()                             // Remove all children
 ```
 
+#### Scrollbar visibility in injected panels (gotcha)
+
+`ScrollerVisibility.Auto` (the Unity default, and what `ScrollerAuto()` sets) does NOT work
+correctly when a `ScrollColumn` or `ScrollBoth` is inside a panel with `AlignSelfStretch()` —
+the scrollbar appears permanently regardless of content height.
+
+`ScrollBoth` in the same context shows BOTH horizontal and vertical scrollbars permanently.
+
+**Workaround for injected panels:** Start with `ScrollerHidden()` and manually toggle visibility
+after each content rebuild by measuring the actual rendered heights via the Unity `ScrollView`:
+
+```csharp
+// In panel setup:
+_embeddedScroll = new ScrollColumn();
+_embeddedScroll.ScrollerHidden();
+_embeddedScroll.MaxHeight(320.px());
+
+// After each content rebuild, schedule two deferred checks (second catches gutter reflow):
+_embeddedScroll.RootElement.schedule.Execute(() => {
+    UpdateScrollbarVisibility();
+    _embeddedScroll.RootElement.schedule.Execute(UpdateScrollbarVisibility);
+});
+
+private void UpdateScrollbarVisibility() {
+    var scrollView = _embeddedScroll.RootElement as UnityEngine.UIElements.ScrollView;
+    if (scrollView == null) return;
+    float contentHeight = scrollView.contentContainer.resolvedStyle.height;
+    float viewportHeight = scrollView.contentViewport.resolvedStyle.height;
+    if (float.IsNaN(contentHeight) || float.IsNaN(viewportHeight)) return;
+    if (contentHeight > viewportHeight)
+        _embeddedScroll.ScrollerAlwaysVisible();
+    else
+        _embeddedScroll.ScrollerHidden();
+}
+```
+
+Note: `ScrollerAlwaysVisible()` on a `ScrollColumn` (vertical-only mode) only shows the
+vertical scrollbar — horizontal is suppressed by the scroll mode.
+
 ### Visibility / Display Extensions
 
 | Method | Source | Usage |
