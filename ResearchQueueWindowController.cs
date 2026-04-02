@@ -812,8 +812,9 @@ public class ResearchQueueWindowController {
 				contentRow.Add(needsLabel);
 			} else {
 				// Promote button — start researching this item now
-				var promoteBtn = new ButtonText(Button.Primary, new LocStrFormatted("\u25b6"));
-				promoteBtn.OnClick((Action)(() => PromoteToActive(index)), allowKeyPresses: false);
+				var promoteBtn = new ButtonIcon(Button.Primary,
+					"Assets/Unity/UserInterface/General/ResearchEfficiency.svg",
+					() => PromoteToActive(index));
 				contentRow.Add(promoteBtn);
 			}
 

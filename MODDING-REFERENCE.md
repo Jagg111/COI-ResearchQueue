@@ -1324,6 +1324,109 @@ HANDLE_COLUMN_TOTAL_WIDTH = HANDLE_PADDING * 2 + HANDLE_COLUMN_RECIPE_SPACING + 
 
 **Drag SVG icon path:** `"Assets/Unity/UserInterface/General/Drag.svg"`
 
+### SVG & PNG Icon Catalog (extracted via ILSpy from Mafi.Unity.dll)
+
+The game's UI icon assets are referenced by path string in code. They are bundled inside Unity asset bundles (not loose files on disk). Product icons live in `Mafi.Base.dll` under `Assets/Base/Products/Icons/`. All UI icons below were extracted from `Mafi.Unity.dll` via full decompilation — `grep`/`strings` on the DLL does not find them because .NET string metadata requires decompilation.
+
+**General icons (`Assets/Unity/UserInterface/General/`):**
+
+| Icon | Path |
+|------|------|
+| ArrowDiagonal | `General/ArrowDiagonal.svg` |
+| ArrowDown | `General/ArrowDown.svg` |
+| ArrowDownFull | `General/ArrowDownFull.svg` |
+| ArrowRight | `General/ArrowRight.svg` |
+| Audio | `General/Audio.svg` |
+| Battery | `General/Battery.svg` |
+| Blocked | `General/Blocked.svg` |
+| Blueprint | `General/Blueprint.svg` |
+| Boost | `General/Boost.svg` |
+| Build | `General/Build.svg` |
+| Cancel | `General/Cancel.svg` |
+| Checkmark | `General/Checkmark.svg` |
+| Checkmark-v2 | `General/Checkmark-v2.svg` |
+| Circle | `General/Circle.svg` |
+| Clipboard | `General/Clipboard.svg` |
+| Clock | `General/Clock.svg` |
+| Close | `General/Close.svg` |
+| CloseThin | `General/CloseThin.svg` |
+| CollapseAll | `General/CollapseAll.svg` |
+| Configure | `General/Configure.svg` |
+| DoubleArrowsLeft | `General/DoubleArrowsLeft.svg` |
+| DoubleArrowsRight | `General/DoubleArrowsRight.svg` |
+| Downgrade | `General/Downgrade.svg` |
+| Drag | `General/Drag.svg` |
+| Edit | `General/Edit.svg` |
+| Electricity | `General/Electricity.svg` |
+| ExpandScreen | `General/ExpandScreen.svg` |
+| Filter | `General/Filter.svg` |
+| FocusPoint | `General/FocusPoint.svg` |
+| Folder | `General/Folder.svg` |
+| Food | `General/Food.svg` |
+| GoTo | `General/GoTo.svg` |
+| Health | `General/Health.svg` |
+| Hide-v2 | `General/Hide-v2.svg` |
+| Home | `General/Home.svg` |
+| Idle | `General/Idle.svg` |
+| ImportFromString | `General/ImportFromString.svg` |
+| Infinite | `General/Infinite.svg` |
+| InfoBubble | `General/InfoBubble.svg` |
+| Left | `General/Left.svg` |
+| Maximize | `General/Maximize.svg` |
+| Minimize | `General/Minimize.svg` |
+| Mod | `General/Mod.svg` |
+| MoveDown | `General/MoveDown.svg` |
+| MoveUp | `General/MoveUp.svg` |
+| Muted | `General/Muted.svg` |
+| NavigateUp | `General/NavigateUp.svg` |
+| Next | `General/Next.svg` |
+| Plus | `General/Plus.svg` |
+| PlusThin | `General/PlusThin.svg` |
+| Pointer | `General/Pointer.svg` |
+| Population | `General/Population.svg` |
+| Power | `General/Power.svg` |
+| Priority | `General/Priority.svg` |
+| Products | `General/Products.svg` |
+| QuestionMark | `General/QuestionMark.svg` |
+| Rename | `General/Rename.svg` |
+| Repeat | `General/Repeat.svg` |
+| Replace | `General/Replace.svg` |
+| ResearchEfficiency | `General/ResearchEfficiency.svg` |
+| ResearchPoint | `General/ResearchPoint.svg` |
+| Reset | `General/Reset.svg` |
+| Return | `General/Return.svg` |
+| Right | `General/Right.svg` |
+| Save | `General/Save.svg` |
+| Search | `General/Search.svg` |
+| Speed | `General/Speed.svg` |
+| SpeedArrows | `General/SpeedArrows.svg` |
+| Swap | `General/Swap.svg` |
+| Table | `General/Table.svg` |
+| Tip | `General/Tip.svg` |
+| Tooltip | `General/Tooltip.svg` |
+| Unpause | `General/Unpause.svg` |
+| Upgrade | `General/Upgrade.svg` |
+| UpgradeHorizontal | `General/UpgradeHorizontal.svg` |
+| Warning-v2 | `General/Warning-v2.svg` |
+
+All paths above are shorthand — full path is `Assets/Unity/UserInterface/General/{Name}.svg`.
+
+**Research icons (`Assets/Unity/UserInterface/Research/`):**
+
+| Icon | Path |
+|------|------|
+| ResearchLocked | `Research/ResearchLocked.svg` |
+| ResearchNodeMask | `Research/ResearchNodeMask.svg` |
+| ResearchProgress | `Research/ResearchProgress.svg` |
+| ResearchUnlocked | `Research/ResearchUnlocked.svg` |
+
+**Toolbar icons (`Assets/Unity/UserInterface/Toolbar/`):**
+Toolbar icons are used for main menu/toolbar buttons. Notable SVGs include: `Research.svg`, `SpaceStation.svg`, `Upgrade.svg`, `Buildings.svg`, `Vehicles.svg`, `Stats.svg`, `Copy.svg`, `Cut.svg`, `Redo.svg`, `Undo.svg`, and many more.
+
+**PNG icons:** Some icons are PNG only (no SVG variant): `Locked128.png`, `Tick128.png`, `Cancel.svg` has SVG but some like `Bell128.png`, `Info128.png` are PNG-only. PNGs are generally 128px.
+
+**Note:** `ButtonIcon` requires an SVG or PNG asset path — it does not accept unicode characters or text. Use `ButtonText` for text-based buttons.
+
 ### Localization Strings (`Mafi.Core.Tr`)
 
 The game's built-in translated strings live in the `Tr` static class in the `Mafi.Core` namespace. Fields are `LocStr` type (from `Mafi.Localization`). Using these ensures button text and labels match the native UI and auto-translate for non-English players.
@@ -1349,10 +1452,31 @@ Tr.Research_AccBonus       // Acceleration bonus label
 
 ### Button Styles (from decompiled `ResearchDetailUi`)
 
+The native `ResearchDetailUi` uses a **mix** of `ButtonText` and `ButtonIcon`. The four buttons in its `buttonsRow`:
+
 ```csharp
-new ButtonText(Button.Primary, Tr.StartResearch_Action)    // Yellow/primary styled button (renders yellow in-game, not green)
-new ButtonIcon(Button.Danger, "path/to/icon.svg")          // Red/danger styled button
-new ButtonText(Tr.ResearchQueue__Remove)                   // Default (unstyled/gray) button
+// Start research — yellow text button (ButtonText + Primary variant)
+startBtn = new ButtonText(Button.Primary, Tr.StartResearch_Action)
+    .OnClick((Action)delegate { scheduler.ScheduleInputCmd(new ResearchStartCmd(node.Proto)); }, allowKeyPresses: false);
+
+// Cancel research — red icon button (ButtonIcon + Danger variant, Cancel.svg)
+cancelBtn = new ButtonIcon(Button.Danger, "Assets/Unity/UserInterface/General/Cancel.svg")
+    .OnClick((Action)delegate { scheduler.ScheduleInputCmd(new ResearchStopCmd()); }, allowKeyPresses: false);
+
+// Enqueue — yellow text button (ButtonText + Primary variant)
+enqueueBtn = new ButtonText(Button.Primary, Tr.ResearchQueue__Add)
+    .OnClick((Action)delegate { scheduler.ScheduleInputCmd(new ResearchQueueDequeueCmd(node.Proto, isEnqueue: true)); }, allowKeyPresses: false);
+
+// Dequeue — gray text button (ButtonText, no variant = unstyled)
+dequeueBtn = new ButtonText(Tr.ResearchQueue__Remove)
+    .OnClick((Action)delegate { scheduler.ScheduleInputCmd(new ResearchQueueDequeueCmd(node.Proto, isEnqueue: false)); }, allowKeyPresses: false);
+```
+
+**Key pattern:** Positive actions use `ButtonText(Button.Primary, ...)` (yellow), destructive actions use `ButtonIcon(Button.Danger, ...)` (red with SVG icon), neutral actions use unstyled `ButtonText(...)` (gray).
+
+**Sizing note:** `ButtonText` and `ButtonIcon` have different internal padding/sizing. When placed side-by-side in the same row, they will render at slightly different heights. If both buttons in a row should be icon-only, use `ButtonIcon` for both to ensure consistent sizing.
+
+```csharp
 button.OnClick((Action)delegate { /* handler */ }, allowKeyPresses: false)
 button.Enabled(bool)                                       // Enable/disable
 ```
