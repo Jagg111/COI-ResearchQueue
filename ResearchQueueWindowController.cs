@@ -31,13 +31,13 @@ public class ResearchQueueWindowController {
 	private readonly UnityEngine.AudioSource _invalidOpSound;
 	private UiComponent _schedulerSource; // For deferred frame scheduling before panel exists
 
-	// Phase 4: ResearchWindow discovery
+	// ResearchWindow discovery
 	private object _rwController;     // The game's ResearchWindow+Controller instance
 	private FieldInfo _windowField;   // m_window field on WindowController<ResearchWindow>
 	private object _researchWindow;   // The ResearchWindow instance once found
 	private bool _researchWindowFound;
 
-	// Phase 4b-d: Embedded queue panel in the research tree
+	// Queue panel UI state
 	private readonly IUnityInputMgr _inputMgr;
 	private bool _panelInjected;
 	private Panel _injectedPanel;             // Our Panel injected into the research tree
@@ -50,7 +50,7 @@ public class ResearchQueueWindowController {
 	private int _lastKnownQueueCount = -1;
 	private Option<ResearchNode> _lastKnownCurrentResearch;
 
-	// Phase 5c: Current research section
+	// Current research section
 	private ProgressBarPercentInline _progressBar;
 	private Label _currentResearchNameLabel;
 	private Column _currentResearchContent;   // Visible when research is active
