@@ -26,6 +26,32 @@ namespace ResearchQueue;
 [GlobalDependency(RegistrationMode.AsEverything)]
 public class ResearchQueueWindowController {
 
+	// ── Layout & styling constants ──
+	private const int PANEL_WIDTH_FALLBACK = 468;           // Default width when native MIN_WIDTH unavailable
+	private const int SCROLL_MAX_HEIGHT = 320;              // Matches native ResearchDetailUi MAX_RECIPES_HEIGHT
+	private const int DRAG_COLUMN_WIDTH = 24;
+	private const int DRAG_ICON_SIZE = 10;
+	private const int DRAG_BORDER_RADIUS = 4;
+	private const float DRAG_ICON_OPACITY = 0.6f;
+	private const float NEEDS_LABEL_OPACITY = 0.6f;
+
+	// Font sizes
+	private const int FONT_SIZE_TITLE = 15;
+	private const int FONT_SIZE_LABEL = 15;
+	private const int FONT_SIZE_SECONDARY = 14;
+	private const int FONT_SIZE_SMALL = 12;
+
+	// Colors (decimal RGB values)
+	private const int COLOR_TITLE_BG = 3700253;            // Blue tint for header row
+	private const int COLOR_TITLE_BG_ALPHA = 83;
+	private const int COLOR_DRAG_BG = 3224115;             // Dark background for drag handle
+	private const int COLOR_DRAG_BORDER = 2763306;         // Right border of drag handle
+	private const int COLOR_OUT_OF_ORDER_BG = 15166315;    // Warning tint for misordered items
+	private const int COLOR_OUT_OF_ORDER_ALPHA = 40;
+
+	// Retry limits
+	private const int MAX_DEFERRED_EXTRACTION_ATTEMPTS = 10;
+
 	private readonly ResearchManager _researchMgr;
 	private readonly FieldInfo _queueField;
 	private readonly UnityEngine.AudioSource _invalidOpSound;
@@ -183,7 +209,7 @@ public class ResearchQueueWindowController {
 	}
 
 	private void ScheduleDeferredExtraction(int attempt) {
-		if (_panelInjected || attempt > 10 || _schedulerSource == null) return;
+		if (_panelInjected || attempt > MAX_DEFERRED_EXTRACTION_ATTEMPTS || _schedulerSource == null) return;
 
 		try {
 			_schedulerSource.RootElement.schedule.Execute(() => {
@@ -245,7 +271,7 @@ public class ResearchQueueWindowController {
 
 			// Build the queue panel matching native ResearchDetailUi styling
 			_injectedPanel = new Panel();
-			Px panelWidth = new Px(468); // fallback
+			Px panelWidth = new Px(PANEL_WIDTH_FALLBACK);
 			if (_researchDetailUi != null) {
 				var minWidthField = _researchDetailUi.GetType().GetField("MIN_WIDTH",
 					BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
@@ -265,9 +291,9 @@ public class ResearchQueueWindowController {
 			// ── Main title row (colored background) ──
 			var titleRow = new Row(1.pt());
 			titleRow.Padding(8.px()).MarginLeftRight(-PanelBase<Panel, Column>.PADDING).JustifyItemsCenter();
-			titleRow.Background(new ColorRgba(3700253, 83));
+			titleRow.Background(new ColorRgba(COLOR_TITLE_BG, COLOR_TITLE_BG_ALPHA));
 			var title = new Label(new LocStrFormatted("Research Queue"));
-			title.TextCenterMiddle().FontBold().FontSize(15);
+			title.TextCenterMiddle().FontBold().FontSize(FONT_SIZE_TITLE);
 			titleRow.Add(title);
 
 			// ── CURRENT RESEARCH section ──
@@ -279,7 +305,7 @@ public class ResearchQueueWindowController {
 			_currentResearchContent.AlignItemsStretch();
 
 			_currentResearchNameLabel = new Label(new LocStrFormatted(""));
-			_currentResearchNameLabel.FontSize(15);
+			_currentResearchNameLabel.FontSize(FONT_SIZE_LABEL);
 
 			_progressBar = new ProgressBarPercentInline();
 
@@ -292,7 +318,7 @@ public class ResearchQueueWindowController {
 
 			// Label shown when no research is active
 			_noResearchLabel = new Label(new LocStrFormatted("No research"));
-			_noResearchLabel.FontSize(14).TextCenterMiddle();
+			_noResearchLabel.FontSize(FONT_SIZE_SECONDARY).TextCenterMiddle();
 
 			// ── RESEARCH QUEUE section ──
 			var queueHeader = new Label(new LocStrFormatted("Research Queue"));
@@ -300,7 +326,7 @@ public class ResearchQueueWindowController {
 
 			_embeddedScroll = new ScrollColumn();
 			_embeddedScroll.ScrollerHidden(); // Hidden by default; UpdateScrollbarVisibility shows it when content overflows
-			_embeddedScroll.MaxHeight(320.px()); // Match native ResearchDetailUi MAX_RECIPES_HEIGHT
+			_embeddedScroll.MaxHeight(SCROLL_MAX_HEIGHT.px());
 
 			// Assemble everything
 			contentCol.Add(titleRow);
@@ -808,7 +834,7 @@ public class ResearchQueueWindowController {
 
 		if (queueNodes.Count == 0) {
 			var emptyLabel = new Label(new LocStrFormatted("Empty"));
-			emptyLabel.FontSize(14).TextCenterMiddle();
+			emptyLabel.FontSize(FONT_SIZE_SECONDARY).TextCenterMiddle();
 			container.Add(emptyLabel);
 			trackingList.Add(emptyLabel);
 			return;
@@ -827,14 +853,14 @@ public class ResearchQueueWindowController {
 
 			// Drag handle — styled with native CSS classes and SVG icon
 			var dragCol = new Column();
-			dragCol.Width(24.px()).AlignSelfStretch().JustifyItemsCenter()
+			dragCol.Width(DRAG_COLUMN_WIDTH.px()).AlignSelfStretch().JustifyItemsCenter()
 				.Class(Cls.reorderHandle, Cls.reorderHandleAlphaHover)
-				.Background(3224115)
-				.BorderRight(1.px(), 2763306)
-				.BorderRadiusLeft(4)
+				.Background(COLOR_DRAG_BG)
+				.BorderRight(1.px(), COLOR_DRAG_BORDER)
+				.BorderRadiusLeft(DRAG_BORDER_RADIUS)
 				.Padding(1.pt());
 			var dragIcon = new Icon("Assets/Unity/UserInterface/General/Drag.svg");
-			dragIcon.Opacity(0.6f).Size(10.px()).AlignSelfCenter();
+			dragIcon.Opacity(DRAG_ICON_OPACITY).Size(DRAG_ICON_SIZE.px()).AlignSelfCenter();
 			dragCol.Add(dragIcon);
 			row.Add(dragCol);
 
@@ -842,13 +868,13 @@ public class ResearchQueueWindowController {
 			var contentRow = new Row(1.pt());
 			contentRow.FlexGrow(1f).AlignSelfStretch().JustifyItemsCenter();
 			if (outOfOrderPrereq != null) {
-				contentRow.Background(new ColorRgba(15166315, 40)); // LOCKED_COLOR
+				contentRow.Background(new ColorRgba(COLOR_OUT_OF_ORDER_BG, COLOR_OUT_OF_ORDER_ALPHA));
 			}
 
 			// Research name label
 			var label = new Label(new LocStrFormatted(
 				node.Proto.Strings.Name.TranslatedString));
-			label.FontSize(15).FlexGrow(1f).Margin(2.px());
+			label.FontSize(FONT_SIZE_LABEL).FlexGrow(1f).Margin(2.px());
 			contentRow.Add(label);
 
 			if (outOfOrderPrereq != null) {
@@ -856,13 +882,13 @@ public class ResearchQueueWindowController {
 				// If the game processes the queue before that prereq finishes, this item
 				// will be silently removed (issue #3).
 				var warnLabel = new Label(new LocStrFormatted($"Move below: {outOfOrderPrereq}"));
-				warnLabel.FontSize(12).Margin(2.px());
+				warnLabel.FontSize(FONT_SIZE_SMALL).Margin(2.px());
 				contentRow.Add(warnLabel);
 			} else if (isLocked) {
 				// Locked but not out-of-order — prereqs exist but aren't in the queue
 				var blockerName = GetFirstUnresearchedParentName(node) ?? "prerequisites";
 				var needsLabel = new Label(new LocStrFormatted($"Needs: {blockerName}"));
-				needsLabel.FontSize(12).Opacity(0.6f).Margin(2.px());
+				needsLabel.FontSize(FONT_SIZE_SMALL).Opacity(NEEDS_LABEL_OPACITY).Margin(2.px());
 				contentRow.Add(needsLabel);
 			} else {
 				// Promote button — start researching this item now
