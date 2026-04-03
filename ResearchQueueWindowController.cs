@@ -620,6 +620,7 @@ public class ResearchQueueWindowController {
 		queue.EnqueueAt(item, toIndex);
 		Log.Info($"ResearchQueue: Moved '{item.Proto.Strings.Name.TranslatedString}' from {fromIndex} to {toIndex}");
 
+		_refreshQueueMethod?.Invoke(_researchMgr, null);
 		RefreshEmbeddedPanel();
 	}
 

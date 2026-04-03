@@ -94,7 +94,7 @@ The queue is `Queueue<ResearchNode>` (`Mafi.Collections.Queueue`), a custom Mafi
 - Game UI (queue tooltip on beaker icon) updates immediately after queue mutation in `Initialize()`
 - Save/reload preserves the reordered queue — the game serializes `m_researchQueue` as-is
 - Currently-researching item (`CurrentResearch`) is NOT disrupted by reordering the queue behind it
-- No events or notifications need to be fired after mutation — the game reads the queue state directly
+- **`refreshQueueValues()` MUST be called after any direct queue mutation** — it stamps each `ResearchNode.IndexInQueue` with its current position. `ResearchNodeUi` observes `node.GetInfo()` (which includes `IndexInQueue`) every frame; without this call, the queue position badges on the research tree nodes will not update. The tooltip on the beaker icon reads queue order directly and updates regardless, which is why badge and tooltip can get out of sync.
 - `ResearchManager` exposes NO events/callbacks for queue changes — detecting external changes requires polling (see "Detecting external queue/state changes" below)
 
 ## Modding API Resources
