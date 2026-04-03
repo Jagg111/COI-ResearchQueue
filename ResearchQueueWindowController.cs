@@ -218,7 +218,7 @@ public class ResearchQueueWindowController {
 				return;
 			}
 
-			var contentRow = FindParentOfType(rwComponent, "ResearchDetailUi");
+			var contentRow = FindContainerOfChildType(rwComponent, "ResearchDetailUi");
 			if (contentRow == null) {
 				Log.Warning("ResearchQueue: Could not find parent Row of ResearchDetailUi");
 				return;
@@ -393,12 +393,12 @@ public class ResearchQueueWindowController {
 		}
 	}
 
-	private static UiComponent FindParentOfType(UiComponent parent, string childTypeName) {
+	private static UiComponent FindContainerOfChildType(UiComponent parent, string childTypeName) {
 		foreach (var child in parent.AllChildren) {
 			if (child.GetType().Name == childTypeName) {
 				return parent;
 			}
-			var result = FindParentOfType(child, childTypeName);
+			var result = FindContainerOfChildType(child, childTypeName);
 			if (result != null) return result;
 		}
 		return null;
