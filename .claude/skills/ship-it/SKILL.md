@@ -1,9 +1,9 @@
 ---
-name: ship
+name: ship-it
 description: End-to-end release workflow for the ResearchQueue mod. Handles pre-flight checks, version bump decision, AI-drafted What's New bullets (reviewed in-session), commit message suggestion, and GitHub draft release creation.
 ---
 
-You are running the `/ship` release workflow for the ResearchQueue Captain of Industry mod. Walk through each step in order. Stop and report clearly if anything fails.
+You are running the `/ship-it` release workflow for the ResearchQueue Captain of Industry mod. Walk through each step in order. Stop and report clearly if anything fails.
 
 ---
 
