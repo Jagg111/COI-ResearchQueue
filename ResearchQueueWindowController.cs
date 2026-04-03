@@ -52,6 +52,70 @@ public class ResearchQueueWindowController {
 	// Retry limits
 	private const int MAX_DEFERRED_EXTRACTION_ATTEMPTS = 10;
 
+	// Version verified against (keep in sync with max_verified_game_version in manifest.json)
+	private const string MAX_VERIFIED_VERSION = "0.8.2c";
+
+	// ── Reflection health tracking ──────────────────────────────────
+	// All reflection lookups go through ReflectionProbe so the mod can
+	// report exactly what resolved and what didn't on startup.
+
+	private static class ReflectionProbe {
+		public struct ProbeResult {
+			public string TargetType;
+			public string MemberName;
+			public string MemberKind;
+			public bool Found;
+			public string Feature;
+		}
+
+		private static readonly List<ProbeResult> _results = new List<ProbeResult>();
+		public static IReadOnlyList<ProbeResult> Results => _results;
+
+		public static bool HasCriticalFailure =>
+			_results.Exists(r => r.Feature.StartsWith("[CRITICAL]") && !r.Found);
+
+		public static FieldInfo Field(Type type, string name, BindingFlags flags, string feature) {
+			var fi = type.GetField(name, flags);
+			_results.Add(new ProbeResult {
+				TargetType = type.FullName, MemberName = name,
+				MemberKind = "field", Found = fi != null, Feature = feature
+			});
+			return fi;
+		}
+
+		public static PropertyInfo Property(Type type, string name, string feature) {
+			var pi = type.GetProperty(name);
+			_results.Add(new ProbeResult {
+				TargetType = type.FullName, MemberName = name,
+				MemberKind = "property", Found = pi != null, Feature = feature
+			});
+			return pi;
+		}
+
+		public static MethodInfo Method(Type type, string name, BindingFlags flags, string feature) {
+			var mi = type.GetMethod(name, flags);
+			_results.Add(new ProbeResult {
+				TargetType = type.FullName, MemberName = name,
+				MemberKind = "method", Found = mi != null, Feature = feature
+			});
+			return mi;
+		}
+
+		public static void RecordTypeProbe(string fullName, bool found, string feature) {
+			_results.Add(new ProbeResult {
+				TargetType = fullName, MemberName = "(type lookup)",
+				MemberKind = "type", Found = found, Feature = feature
+			});
+		}
+	}
+
+	// ── Capability flags (set after reflection probes) ──
+	private bool _canReadQueue;
+	private bool _canMutateQueue;
+	private bool _canInjectPanel;
+	private bool _canPollVisibility;
+	private bool _canAutoDeselect;
+
 	private readonly ResearchManager _researchMgr;
 	private readonly FieldInfo _queueField;
 	private readonly UnityEngine.AudioSource _invalidOpSound;
@@ -98,31 +162,34 @@ public class ResearchQueueWindowController {
 		_inputMgr = inputMgr;
 		_invalidOpSound = audioDb.GetSharedAudioUi("Assets/Unity/UserInterface/Audio/InvalidOp.prefab");
 
-		// Get a UiComponent from ToolbarHud's internal container for frame scheduling.
-		// Needed by ScheduleDeferredExtraction before our injected panel exists.
+		// ── Reflection probes (all lookups go through ReflectionProbe) ──
+
+		// Scheduler source for deferred frame scheduling before panel exists
 		try {
-			var containerField = typeof(ToolbarHud).GetField("m_mainContainer",
-				BindingFlags.NonPublic | BindingFlags.Instance);
+			var containerField = ReflectionProbe.Field(
+				typeof(ToolbarHud), "m_mainContainer",
+				BindingFlags.NonPublic | BindingFlags.Instance,
+				"Deferred window extraction scheduling");
 			_schedulerSource = containerField?.GetValue(toolbar) as UiComponent;
 		} catch (Exception ex) {
 			Log.Warning($"ResearchQueue: Could not get scheduler source: {ex.Message}");
 		}
 
-		// Cache the reflection field for queue access
-		_queueField = typeof(ResearchManager).GetField(
-			"m_researchQueue",
-			BindingFlags.NonPublic | BindingFlags.Instance
-		);
+		// Queue access
+		_queueField = ReflectionProbe.Field(
+			typeof(ResearchManager), "m_researchQueue",
+			BindingFlags.NonPublic | BindingFlags.Instance,
+			"[CRITICAL] Queue read/write");
 
-		if (_queueField == null) {
-			Log.Error("ResearchQueue: Could not find m_researchQueue field!");
-		}
-
-		// Cache reflection for current research manipulation
-		_currentResearchProp = typeof(ResearchManager).GetProperty("CurrentResearch");
+		// Current research manipulation
+		_currentResearchProp = ReflectionProbe.Property(
+			typeof(ResearchManager), "CurrentResearch",
+			"[CRITICAL] Current research read");
 		_currentResearchSetter = _currentResearchProp?.GetSetMethod(true);
-		_refreshQueueMethod = typeof(ResearchManager).GetMethod("refreshQueueValues",
-			BindingFlags.NonPublic | BindingFlags.Instance);
+		_refreshQueueMethod = ReflectionProbe.Method(
+			typeof(ResearchManager), "refreshQueueValues",
+			BindingFlags.NonPublic | BindingFlags.Instance,
+			"[CRITICAL] Queue badge sync after mutations");
 
 		// Find ResearchWindow via the game's ResearchWindow+Controller.
 		// The controller extends WindowController<ResearchWindow> and stores the
@@ -134,22 +201,34 @@ public class ResearchQueueWindowController {
 				break;
 			}
 		}
+		ReflectionProbe.RecordTypeProbe(
+			"Mafi.Unity.Ui.Research.ResearchWindow+Controller",
+			_rwController != null,
+			"[CRITICAL] Research window controller discovery");
 
 		if (_rwController != null) {
-			_windowField = _rwController.GetType().BaseType?.GetField("m_window",
-				BindingFlags.NonPublic | BindingFlags.Instance);
+			_windowField = ReflectionProbe.Field(
+				_rwController.GetType().BaseType, "m_window",
+				BindingFlags.NonPublic | BindingFlags.Instance,
+				"[CRITICAL] Research window instance extraction");
 
 			if (_windowField != null) {
 				TryExtractResearchWindow();
 				if (!_researchWindowFound) {
 					Log.Info("ResearchQueue: ResearchWindow not yet created — will retry on open");
 				}
-			} else {
-				Log.Warning("ResearchQueue: m_window field NOT found on WindowController base type");
 			}
-		} else {
-			Log.Warning("ResearchQueue: ResearchWindow+Controller NOT found in DI");
 		}
+
+		// ── Compute capability flags ──
+		_canReadQueue = _queueField != null;
+		_canMutateQueue = _canReadQueue
+			&& _currentResearchSetter != null
+			&& _refreshQueueMethod != null;
+		_canInjectPanel = _rwController != null && _windowField != null;
+
+		// Log health report
+		LogHealthReport();
 
 		if (_researchWindowFound) {
 			TryInjectPanel();
@@ -159,6 +238,41 @@ public class ResearchQueueWindowController {
 		_inputMgr.ControllerDeactivated += OnControllerDeactivated;
 
 		Log.Info("ResearchQueue: Controller constructed");
+	}
+
+	/// <summary>
+	/// Logs a startup health report showing which reflection targets resolved
+	/// and which are missing. Helps diagnose breakage after game updates.
+	/// </summary>
+	private void LogHealthReport() {
+		var results = ReflectionProbe.Results;
+		int passed = 0, failed = 0;
+
+		Log.Info("ResearchQueue: === Health Check ===");
+		Log.Info($"ResearchQueue: Max verified game version: {MAX_VERIFIED_VERSION}");
+
+		foreach (var r in results) {
+			if (r.Found) {
+				passed++;
+			} else {
+				failed++;
+				Log.Warning($"ResearchQueue: MISSING {r.MemberKind} '{r.MemberName}' on {r.TargetType} -- {r.Feature} DISABLED");
+			}
+		}
+
+		if (failed == 0) {
+			Log.Info($"ResearchQueue: All {passed} reflection targets resolved -- fully operational");
+		} else {
+			Log.Warning($"ResearchQueue: {failed}/{passed + failed} reflection targets missing -- some features disabled");
+		}
+
+		if (ReflectionProbe.HasCriticalFailure) {
+			Log.Error("ResearchQueue: CRITICAL reflection targets missing -- mod cannot function. " +
+				"This usually means a game update changed internal APIs. " +
+				"Check for a mod update at https://github.com/Jagg111/COI-ResearchQueue");
+		}
+
+		Log.Info("ResearchQueue: ================================");
 	}
 
 	/// <summary>
@@ -245,7 +359,7 @@ public class ResearchQueueWindowController {
 	/// 2. RESEARCH QUEUE — shows queued items with reorder buttons
 	/// </summary>
 	private void TryInjectPanel() {
-		if (_panelInjected || _researchWindow == null) return;
+		if (_panelInjected || _researchWindow == null || !_canInjectPanel) return;
 
 		try {
 			var rwComponent = _researchWindow as UiComponent;
@@ -268,25 +382,36 @@ public class ResearchQueueWindowController {
 			}
 
 			// Cache m_selectedNode field for visibility polling
-			_selectedNodeField = _researchWindow.GetType().GetField(
-				"m_selectedNode",
-				BindingFlags.NonPublic | BindingFlags.Instance
-			);
+			_selectedNodeField = ReflectionProbe.Field(
+				_researchWindow.GetType(), "m_selectedNode",
+				BindingFlags.NonPublic | BindingFlags.Instance,
+				"Auto-show queue panel when no node selected");
 			if (_selectedNodeField != null) {
 				object optionVal = _selectedNodeField.GetValue(_researchWindow);
 				if (optionVal != null) {
-					_hasValueProp = optionVal.GetType().GetProperty("HasValue");
-					_selectedNodeNoneValue = _selectedNodeField.FieldType.GetField("None",
-						BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
+					_hasValueProp = ReflectionProbe.Property(
+						optionVal.GetType(), "HasValue",
+						"Check if a research node is selected");
+					var noneField = ReflectionProbe.Field(
+						_selectedNodeField.FieldType, "None",
+						BindingFlags.Static | BindingFlags.Public,
+						"Deselect research node programmatically");
+					_selectedNodeNoneValue = noneField?.GetValue(null);
 				}
 			}
+
+			// Update capability flags now that panel-time probes are done
+			_canPollVisibility = _selectedNodeField != null && _hasValueProp != null;
+			_canAutoDeselect = _canPollVisibility && _selectedNodeNoneValue != null;
 
 			// Build the queue panel matching native ResearchDetailUi styling
 			_injectedPanel = new Panel();
 			Px panelWidth = new Px(PANEL_WIDTH_FALLBACK);
 			if (_researchDetailUi != null) {
-				var minWidthField = _researchDetailUi.GetType().GetField("MIN_WIDTH",
-					BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+				var minWidthField = ReflectionProbe.Field(
+					_researchDetailUi.GetType(), "MIN_WIDTH",
+					BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public,
+					"Match panel width to native detail panel");
 				if (minWidthField != null) {
 					panelWidth = (Px)minWidthField.GetValue(null);
 					Log.Info($"ResearchQueue: Using native MIN_WIDTH = {panelWidth}");
@@ -321,12 +446,14 @@ public class ResearchQueueWindowController {
 
 			_progressBar = new ProgressBarPercentInline();
 
-			var cancelBtn = new ButtonIcon(Button.Danger,
-				"Assets/Unity/UserInterface/General/Cancel.svg",
-				() => CancelCurrentResearch());
-			cancelBtn.AlignSelfCenter();
-
-			_currentResearchContent.Add(_currentResearchNameLabel, _progressBar, cancelBtn);
+			_currentResearchContent.Add(_currentResearchNameLabel, _progressBar);
+			if (_canMutateQueue) {
+				var cancelBtn = new ButtonIcon(Button.Danger,
+					"Assets/Unity/UserInterface/General/Cancel.svg",
+					() => CancelCurrentResearch());
+				cancelBtn.AlignSelfCenter();
+				_currentResearchContent.Add(cancelBtn);
+			}
 
 			// Label shown when no research is active
 			_noResearchLabel = new Label(new LocStrFormatted("No research"));
@@ -347,6 +474,12 @@ public class ResearchQueueWindowController {
 			contentCol.Add(_noResearchLabel);
 			contentCol.Add(queueHeader);
 			contentCol.Add(_embeddedScroll);
+			if (!_canMutateQueue && _canReadQueue) {
+				var readOnlyLabel = new Label(new LocStrFormatted(
+					"Queue reordering unavailable -- a game update may have changed internal APIs."));
+				readOnlyLabel.FontSize(FONT_SIZE_SMALL).Opacity(NEEDS_LABEL_OPACITY).Margin(4.px());
+				contentCol.Add(readOnlyLabel);
+			}
 			_injectedPanel.Body.Add(contentCol);
 
 			// Defer adding to next frame so layout picks it up
@@ -371,7 +504,7 @@ public class ResearchQueueWindowController {
 		if (_embeddedScroll == null) return;
 
 		// Sync cached state so CheckForQueueChanges doesn't re-trigger
-		if (_queueField != null) {
+		if (_canReadQueue) {
 			var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
 			_lastKnownQueueCount = queue.Count;
 		}
@@ -466,8 +599,7 @@ public class ResearchQueueWindowController {
 	}
 
 	private void StartVisibilityPolling() {
-		if (_injectedPanel == null || _selectedNodeField == null || _hasValueProp == null) {
-			Log.Warning("ResearchQueue: Cannot start visibility polling — missing references");
+		if (_injectedPanel == null || !_canPollVisibility) {
 			return;
 		}
 
@@ -542,7 +674,7 @@ public class ResearchQueueWindowController {
 	/// queue panel auto-shows — avoiding the need to manually press Escape first.
 	/// </summary>
 	private void CheckForQueueChanges() {
-		if (_queueField == null) return;
+		if (!_canReadQueue) return;
 		// Run whenever either our panel OR the detail view is visible — we need to detect
 		// queue changes that happen while the detail view is open (our panel is hidden).
 		bool detailViewOpen = _researchDetailUi != null && _researchDetailUi.IsVisible();
@@ -561,12 +693,10 @@ public class ResearchQueueWindowController {
 			_lastKnownCurrentResearch = currentResearch;
 			RefreshEmbeddedPanel();
 
-			if (detailViewOpen && _selectedNodeField != null) {
+			if (detailViewOpen && _canAutoDeselect) {
 				// Writing Option<T>.None to m_selectedNode deselects the node in the tree,
 				// which causes UpdatePanelVisibility() to show our queue panel on the next frame.
-				if (_selectedNodeNoneValue != null) {
-					_selectedNodeField.SetValue(_researchWindow, _selectedNodeNoneValue);
-				}
+				_selectedNodeField.SetValue(_researchWindow, _selectedNodeNoneValue);
 			}
 		}
 	}
@@ -577,6 +707,7 @@ public class ResearchQueueWindowController {
 	/// preserves the queue — only the current item is removed.
 	/// </summary>
 	private void CancelCurrentResearch() {
+		if (!_canMutateQueue) return;
 		var currentOpt = _researchMgr.CurrentResearch;
 		if (!currentOpt.HasValue) return;
 
@@ -608,6 +739,7 @@ public class ResearchQueueWindowController {
 	/// is placed at the front of the queue so it's next in line.
 	/// </summary>
 	private void PromoteToActive(int queueIndex) {
+		if (!_canMutateQueue) return;
 		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
 		if (queueIndex < 0 || queueIndex >= queue.Count) return;
 
@@ -647,6 +779,7 @@ public class ResearchQueueWindowController {
 	/// Removes an item from the research queue entirely.
 	/// </summary>
 	private void RemoveFromQueue(int queueIndex) {
+		if (!_canMutateQueue) return;
 		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
 		if (queueIndex < 0 || queueIndex >= queue.Count) return;
 
@@ -661,7 +794,7 @@ public class ResearchQueueWindowController {
 	/// then refreshes the embedded panel display.
 	/// </summary>
 	private void MoveItem(int fromIndex, int toIndex) {
-		if (_queueField == null) return;
+		if (!_canMutateQueue) return;
 
 		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
 
@@ -683,7 +816,7 @@ public class ResearchQueueWindowController {
 	/// </summary>
 	private List<ResearchNode> ReadQueueNodes() {
 		var items = new List<ResearchNode>();
-		if (_queueField == null) return items;
+		if (!_canReadQueue) return items;
 
 		var queue = (Queueue<ResearchNode>)_queueField.GetValue(_researchMgr);
 		foreach (ResearchNode node in queue) {
@@ -807,7 +940,7 @@ public class ResearchQueueWindowController {
 	/// refreshes to snap the visual state back to the original order.
 	/// </summary>
 	private void MoveItemClamped(int fromIndex, int toIndex) {
-		if (_queueField == null) return;
+		if (!_canMutateQueue) return;
 
 		var queueNodes = ReadQueueNodes();
 		if (fromIndex < 0 || fromIndex >= queueNodes.Count || toIndex < 0 || toIndex >= queueNodes.Count) {
@@ -862,18 +995,21 @@ public class ResearchQueueWindowController {
 			row.JustifyItemsCenter();
 			row.StyleGroup(); // Native dark background + border (same as recipe rows)
 
-			// Drag handle — styled with native CSS classes and SVG icon
-			var dragCol = new Column();
-			dragCol.Width(DRAG_COLUMN_WIDTH.px()).AlignSelfStretch().JustifyItemsCenter()
-				.Class(Cls.reorderHandle, Cls.reorderHandleAlphaHover)
-				.Background(COLOR_DRAG_BG)
-				.BorderRight(1.px(), COLOR_DRAG_BORDER)
-				.BorderRadiusLeft(DRAG_BORDER_RADIUS)
-				.Padding(1.pt());
-			var dragIcon = new Icon("Assets/Unity/UserInterface/General/Drag.svg");
-			dragIcon.Opacity(DRAG_ICON_OPACITY).Size(DRAG_ICON_SIZE.px()).AlignSelfCenter();
-			dragCol.Add(dragIcon);
-			row.Add(dragCol);
+			// Drag handle — only shown when queue mutations are available
+			Column dragCol = null;
+			if (_canMutateQueue) {
+				dragCol = new Column();
+				dragCol.Width(DRAG_COLUMN_WIDTH.px()).AlignSelfStretch().JustifyItemsCenter()
+					.Class(Cls.reorderHandle, Cls.reorderHandleAlphaHover)
+					.Background(COLOR_DRAG_BG)
+					.BorderRight(1.px(), COLOR_DRAG_BORDER)
+					.BorderRadiusLeft(DRAG_BORDER_RADIUS)
+					.Padding(1.pt());
+				var dragIcon = new Icon("Assets/Unity/UserInterface/General/Drag.svg");
+				dragIcon.Opacity(DRAG_ICON_OPACITY).Size(DRAG_ICON_SIZE.px()).AlignSelfCenter();
+				dragCol.Add(dragIcon);
+				row.Add(dragCol);
+			}
 
 			// Content area — tinted for out-of-order items, flush against drag handle
 			var contentRow = new Row(1.pt());
@@ -888,38 +1024,42 @@ public class ResearchQueueWindowController {
 			label.FontSize(FONT_SIZE_LABEL).FlexGrow(1f).Margin(2.px());
 			contentRow.Add(label);
 
-			if (outOfOrderPrereq != null) {
-				// Out-of-order warning: this item sits above a prerequisite in the queue.
-				// If the game processes the queue before that prereq finishes, this item
-				// will be silently removed (issue #3).
-				var warnLabel = new Label(new LocStrFormatted($"Move below: {outOfOrderPrereq}"));
-				warnLabel.FontSize(FONT_SIZE_SMALL).Margin(2.px());
-				contentRow.Add(warnLabel);
-			} else if (isLocked) {
-				// Locked but not out-of-order — prereqs exist but aren't in the queue
-				var blockerName = GetFirstUnresearchedParentName(node) ?? "prerequisites";
-				var needsLabel = new Label(new LocStrFormatted($"Needs: {blockerName}"));
-				needsLabel.FontSize(FONT_SIZE_SMALL).Opacity(NEEDS_LABEL_OPACITY).Margin(2.px());
-				contentRow.Add(needsLabel);
-			} else {
-				// Promote button — start researching this item now
-				var promoteBtn = new ButtonIcon(Button.Primary,
-					"Assets/Unity/UserInterface/General/ResearchEfficiency.svg",
-					() => PromoteToActive(index));
-				contentRow.Add(promoteBtn);
-			}
+			if (_canMutateQueue) {
+				if (outOfOrderPrereq != null) {
+					// Out-of-order warning: this item sits above a prerequisite in the queue.
+					// If the game processes the queue before that prereq finishes, this item
+					// will be silently removed (issue #3).
+					var warnLabel = new Label(new LocStrFormatted($"Move below: {outOfOrderPrereq}"));
+					warnLabel.FontSize(FONT_SIZE_SMALL).Margin(2.px());
+					contentRow.Add(warnLabel);
+				} else if (isLocked) {
+					// Locked but not out-of-order — prereqs exist but aren't in the queue
+					var blockerName = GetFirstUnresearchedParentName(node) ?? "prerequisites";
+					var needsLabel = new Label(new LocStrFormatted($"Needs: {blockerName}"));
+					needsLabel.FontSize(FONT_SIZE_SMALL).Opacity(NEEDS_LABEL_OPACITY).Margin(2.px());
+					contentRow.Add(needsLabel);
+				} else {
+					// Promote button — start researching this item now
+					var promoteBtn = new ButtonIcon(Button.Primary,
+						"Assets/Unity/UserInterface/General/ResearchEfficiency.svg",
+						() => PromoteToActive(index));
+					contentRow.Add(promoteBtn);
+				}
 
-			// Remove button — compact red X icon matching the current research cancel button
-			var removeBtn = new ButtonIcon(Button.Danger,
-				"Assets/Unity/UserInterface/General/Cancel.svg",
-				() => RemoveFromQueue(index));
-			contentRow.Add(removeBtn);
+				// Remove button — compact red X icon matching the current research cancel button
+				var removeBtn = new ButtonIcon(Button.Danger,
+					"Assets/Unity/UserInterface/General/Cancel.svg",
+					() => RemoveFromQueue(index));
+				contentRow.Add(removeBtn);
+			}
 			row.Add(contentRow);
 
 			// Wire up drag-and-drop reordering via the game's Reorderable manipulator
-			var reorderable = new Reorderable(dragCol.RootElement);
-			reorderable.OnOrderChanged += (oldIdx, newIdx) => MoveItemClamped(oldIdx, newIdx);
-			row.AddManipulator(reorderable);
+			if (_canMutateQueue && dragCol != null) {
+				var reorderable = new Reorderable(dragCol.RootElement);
+				reorderable.OnOrderChanged += (oldIdx, newIdx) => MoveItemClamped(oldIdx, newIdx);
+				row.AddManipulator(reorderable);
+			}
 
 			container.Add(row);
 			trackingList.Add(row);
