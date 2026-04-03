@@ -9,6 +9,6 @@
 	"can_remove_from_saved_game": true,
 	"authors": [ "Jagg111" ],
 	"links": [],
-	"min_game_version": "0.4.0",
+	"min_game_version": "0.8.0",
 	"max_verified_game_version": "0.8.2c"
 }
