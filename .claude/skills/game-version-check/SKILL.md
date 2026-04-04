@@ -1,12 +1,14 @@
-# /game-version-check
+---
+name: game-version-check
+description: Run after a Captain of Industry game update. Compares game version, runs reflection diagnostics, guides manual in-game testing, analyzes logs, and prompts for version bump + release if needed.
+disable-model-invocation: true
+---
 
-Run this skill after a Captain of Industry game update to check whether the ResearchQueue mod will still work with the new version.
+Walk through each step in order. Stop and report clearly if anything fails.
 
-## What this checks and why
+## What this does and why
 
-The ResearchQueue mod works by peeking at internal game code that isn't part of any official modding API. Think of it like the mod knowing the exact name and location of a drawer inside the game's filing cabinet. When the game updates, the developers might rename those drawers, move them, or remove them entirely -- and the mod wouldn't know where to look anymore.
-
-This skill runs a diagnostic that checks whether all those "drawers" (called reflection targets in the code) still exist where the mod expects them. It tells you exactly what's working, what's broken, and what to do about it.
+The ResearchQueue mod depends on internal game code that isn't part of any official modding API. When the game updates, those internal references can change -- renamed, moved, or removed entirely. This skill runs a full compatibility check: it verifies the game version, checks all internal references offline, walks you through manual in-game testing, then analyzes the game log to confirm everything lines up.
 
 ## Key files
 
@@ -16,9 +18,41 @@ This skill runs a diagnostic that checks whether all those "drawers" (called ref
 | `inspect_dll.ps1` | A deeper inspection tool. When something breaks, this shows you what a game type looks like now so you can spot what changed (renamed, moved, etc.). |
 | `ResearchQueueWindowController.cs` | The mod's main code file. Contains all the `ReflectionProbe.*` calls that define what internal game code the mod depends on. |
 
-## Workflow
+---
 
-### Step 1: Run the diagnostic
+## Step 0 -- Determine game version and compare
+
+Read the game's log to find the current version and check it against what the mod was last verified with.
+
+1. Find the newest log file in the game's log folder. Run:
+   ```
+   powershell.exe -ExecutionPolicy Bypass -Command "Get-ChildItem '$env:APPDATA\Captain of Industry\Logs' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { Write-Output $_.FullName; Get-Content $_.FullName -TotalCount 10 }"
+   ```
+
+2. In the output, look for a line matching this pattern:
+   ```
+   Build: <number>, v<version> (Update <N>)
+   ```
+   For example: `Build: 559, v0.8.2c (Update 4)`. Extract the version string (e.g., `0.8.2c`).
+
+3. If no log file exists or no version line is found, ask the user: "I couldn't detect the game version from the logs. What version of Captain of Industry are you running? (You can find this on the game's main menu.)"
+
+4. Read `manifest.json` and extract the `max_verified_game_version` value.
+
+5. Show the user a clear comparison:
+   - **Current game version:** (what you found)
+   - **Max verified version in manifest:** (what manifest.json says)
+   - **Match?** Yes / No
+
+6. Remember whether these versions match or differ -- you'll need this in Step 5.
+
+Continue to Step 1.
+
+---
+
+## Step 1 -- Run reflection checks
+
+Run the offline diagnostic to see if the mod's internal game references still resolve.
 
 Run the diagnostic script from the project root:
 
@@ -32,14 +66,11 @@ Always show the user the full output table. The results break down into three ca
 - **FAIL** -- The game changed and the mod can't find this reference anymore. This feature is broken and needs a code fix.
 - **SKIP** -- This reference uses a dynamic type that can only be checked by actually running the game. The mod's built-in health check (visible in the game log at startup) will verify these automatically.
 
-### Step 2: If everything passes
+### If everything passes
 
-Great news -- tell the user the mod should work fine with the new game version. Remind them to:
-1. Update `max_verified_game_version` in `manifest.json` to the new game version
-2. Update the `MAX_VERIFIED_VERSION` constant in `ResearchQueueWindowController.cs` (search for "keep in sync with max_verified_game_version")
-3. Test in-game to confirm (especially the SKIP items that couldn't be checked offline)
+Tell the user the offline checks look good, and continue to Step 2 for manual testing.
 
-### Step 3: If something fails
+### If something fails
 
 Explain to the user in plain language what broke and what it means for the mod. For each failed target:
 
@@ -59,13 +90,111 @@ Explain to the user in plain language what broke and what it means for the mod. 
    powershell -ExecutionPolicy Bypass -File check-reflection-targets.ps1
    ```
 
-4. Once all targets pass, update the version tracking (same as Step 2 above).
+4. Repeat until all static checks pass. Only then continue to Step 2.
 
-Remind the user about version bumping per CLAUDE.md rules.
+---
 
-## What happens if the mod loads with broken targets?
+## Step 2 -- Manual in-game testing
 
-The mod won't crash. It has a built-in safety system with two layers:
+Time to test the mod in the actual game. Present this checklist to the user and wait for their feedback:
+
+> Please launch the game, load a save, and work through this checklist. For each item, note whether it passed or if anything seemed off.
+>
+> 1. **Startup** -- Open the research tree. The queue panel should appear on the right side.
+> 2. **Panel visibility toggle** -- Click on a research node (panel should hide). Click away to deselect (panel should reappear).
+> 3. **Current research display** -- Start researching something. The queue panel should show its name and a progress bar.
+> 4. **Lab status indicator** -- If you have an active research lab, the progress bar should be green. If you pause or don't have a lab, it should turn orange.
+> 5. **Queue population** -- Add 3 or more items to the research queue using the normal research tree buttons. They should all appear in the queue panel.
+> 6. **Promote button** -- On a queued item, click the arrow/promote button. That item should jump to active research.
+> 7. **Remove button** -- On a queued item, click the X/remove button. It should disappear from the queue.
+> 8. **Cancel button (mod)** -- Click the red X next to the current research in the queue panel. Research should cancel but the rest of the queue should stay intact.
+> 9. **Cancel button (native)** -- Select a research node and use the game's built-in cancel button in the detail panel. The queue should still be preserved (not wiped).
+> 10. **Drag-and-drop reorder** -- Drag a queue item by its handle to a new position. The order should update.
+> 11. **Prerequisite constraint** -- Try dragging an item above one of its unresearched prerequisites. It should snap back to its original position and play an error sound.
+> 12. **Out-of-order warning** -- If any item ends up above its prerequisite, it should have an orange/red tint and show a "Move below: [name]" message.
+> 13. **Empty queue** -- Remove all items from the queue. The panel should show an "Empty" label.
+> 14. **Scrollbar** -- Add enough items so the list overflows. A scrollbar should appear. Remove items until it fits -- scrollbar should hide.
+>
+> Let me know how it went! You can say something like "all passed" or list any items that had issues.
+
+Wait for the user to respond before continuing.
+
+---
+
+## Step 3 -- Analyze game log
+
+Check the game log for any warnings or errors the mod reported during the test session.
+
+Immediately after receiving the user's manual test feedback, pull the latest log file and analyze it. Do NOT prompt the user again -- just do this automatically.
+
+1. Find the newest log file (the user just played, so there should be a fresh one):
+   ```
+   powershell.exe -ExecutionPolicy Bypass -Command "Get-ChildItem '$env:APPDATA\Captain of Industry\Logs' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { Write-Output $_.FullName }"
+   ```
+
+2. Read the log file and extract all lines containing `ResearchQueue:`.
+
+3. Parse the health check block (look for lines between `=== Health Check ===` and `================================`):
+   - If you see "All N reflection targets resolved -- fully operational" that's a full pass.
+   - If you see "N/total reflection targets missing -- some features disabled" that's a partial pass -- note which features are disabled.
+   - If you see "CRITICAL reflection targets missing" that's a critical failure.
+
+4. Look for any WARNING (`W` prefix) or ERROR (`E` prefix) lines that contain `ResearchQueue:`. List them.
+
+5. Cross-reference the log findings against the user's manual test feedback:
+   - If the user reported a failure, check the log for related errors or warnings that explain it.
+   - If the user reported everything passed but the log shows warnings, flag the discrepancy.
+   - If both the user and the log agree everything is clean, say so.
+
+6. Present a clear summary:
+   - **Health check:** PASS / PARTIAL / FAIL (with details)
+   - **Warnings found:** (list, or "None")
+   - **Errors found:** (list, or "None")
+   - **Manual vs. log alignment:** Do the log findings match the user's test results?
+
+Continue to Step 4.
+
+---
+
+## Step 4 -- Resolution loop
+
+If there are any failures or discrepancies from Steps 1, 2, or 3:
+- Investigate each issue with the user
+- Make code fixes as needed, rebuild (`dotnet build ResearchQueue.sln`), and re-run the reflection check
+- For issues found during manual testing, ask the user to re-test just the specific items that failed
+- Pull the log again after re-testing to confirm
+- Continue until all issues are resolved
+
+If everything passed cleanly across all checks, skip this step and declare: "All clear -- the mod is fully compatible with this game version."
+
+Continue to Step 5.
+
+---
+
+## Step 5 -- Version bump (conditional)
+
+**Only run this step if the game version from Step 0 is different from the `max_verified_game_version` in manifest.json.** If they already match, skip this step entirely and say the check is complete.
+
+If the versions differ and all checks passed:
+
+1. Tell the user: "The game version has changed and all compatibility checks passed. Let's update the mod to reflect the new verified version."
+
+2. List the three places that need updating:
+   - `manifest.json`: change `max_verified_game_version` from the old version to the new one
+   - `ResearchQueueWindowController.cs` (line 56): change the `MAX_VERIFIED_VERSION` string from the old version to the new one
+   - `README.md` (compatibility table, line 60): change the `(X.Y.Zx verified)` text to show the new version
+
+3. Ask the user if they'd like to proceed with these updates.
+
+4. If yes, make all three edits.
+
+5. After the edits are done, tell the user: "Version references updated. You can now run `/ship-it` to publish a new release with the updated game version."
+
+---
+
+## Edge cases
+
+The mod won't crash if targets are broken. It has a built-in safety system with two layers:
 
 1. **Health check log** -- On startup, the mod writes a report to the game log showing exactly what resolved and what's missing. Look for the `=== Health Check ===` block.
 
