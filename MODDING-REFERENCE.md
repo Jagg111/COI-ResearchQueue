@@ -2,7 +2,67 @@
 
 Technical deep-dive on game APIs and modding patterns for **Update 4 (v0.8.2c)**. Everything here has been verified by direct DLL inspection or in-game testing. See CLAUDE.md for project overview and scope.
 
-> **Note on COI-Extended:** We initially used the COI-Extended mod as a reference, but it was built for an older game version. Its `IMod` constructor signature, UI base classes (`WindowView`, `BaseWindowController<T>`, `IToolbarItemInputController`), and other patterns either don't compile or don't exist in Update 4. We no longer use it as a reference — all patterns below are verified against the current game DLLs.
+## Quick Reference
+
+The most commonly needed facts — all verified. Full details in the sections below.
+
+**Getting core objects from DI:**
+```csharp
+// ResearchManager — directly available in DI
+ResearchManager researchMgr = resolver.GetResolvedInstance<ResearchManager>().Value;
+
+// ResearchWindow — NOT in DI directly; find via its Controller
+// (see "Finding ResearchWindow at Runtime" for full pattern)
+```
+
+**Queue access and mutation:**
+```csharp
+// Get the queue
+FieldInfo queueField = typeof(ResearchManager).GetField("m_researchQueue",
+    BindingFlags.NonPublic | BindingFlags.Instance);
+var queue = (Queueue<ResearchNode>)queueField.GetValue(researchMgr);
+
+// Reorder — move item from oldIndex to newIndex
+var item = queue.PopAt(oldIndex);
+queue.EnqueueAt(item, newIndex);  // item first, index second
+
+// REQUIRED after any direct queue mutation:
+typeof(ResearchManager).GetMethod("refreshQueueValues",
+    BindingFlags.NonPublic | BindingFlags.Instance)
+    .Invoke(researchMgr, null);
+```
+
+**`Option<T>` unwrapping (used everywhere in game APIs):**
+```csharp
+bool has = (bool)optionValue.GetType().GetProperty("HasValue").GetValue(optionValue);
+object val = optionValue.GetType().GetProperty("ValueOrNull").GetValue(optionValue);
+// NOTE: There is NO .Value property — use ValueOrNull
+// NOTE: Option<T>.None is a static FIELD, not a property — use GetField("None", ...) not GetProperty
+```
+
+**Key layout rules:**
+- `ResearchDetailUi` is a **child component** in the visual tree, NOT a field on `ResearchWindow`
+- Call `.AlignSelfStretch()` on any panel placed inside a `Row` to make it fill full height
+- Use `Label` (not `Display`) for normal-case text — `Display` renders ALL CAPS
+- `PanelBase<Panel, Column>.PADDING` = `12.px()` — use this to cancel panel padding in title rows
+
+---
+
+## Critical Gotchas
+
+These are easy to get wrong. Read before touching any of the areas below.
+
+- **`Option<T>.None` is a static field, not a property** — `GetProperty("None")` silently returns null. Use `GetField("None", BindingFlags.Static | BindingFlags.Public)`.
+- **`ResearchWindow` is lazily created** — `Option<ResearchWindow>` is empty until the player first opens the research tree. Do not access it at construction time.
+- **`ControllerActivated` fires before `ResearchWindow` exists on first open** — the window is built during `Activate()`, not before. Defer extraction with `someComponent.RootElement.schedule.Execute(() => { ... })`.
+- **`refreshQueueValues()` is required after any direct queue mutation** — without it, the queue position badges on research tree nodes will not update (the tooltip updates fine without it, so they can get out of sync).
+- **`ScrollerVisibility.Auto` is broken inside `AlignSelfStretch` panels** — the scrollbar never appears. Use `ScrollerVisibility.AlwaysVisible` instead.
+- **`AmbiguousMatchException` on `ResearchNode`** — use `BindingFlags.DeclaredOnly` when calling `GetField`/`GetMethod` on `ResearchNode` to avoid ambiguity from inherited members.
+- **`ResearchManager.StopResearch()` clears the ENTIRE queue** — do not use it to cancel only the current item. Call the dequeue command directly instead.
+- **`OnOrderChanged(oldIndex, newIndex)` uses post-pop coordinate space** — maps directly to `PopAt(oldIndex)` + `EnqueueAt(item, newIndex)`. After `PopAt`, the queue has n-1 items; inserting at index n-1 appends safely.
+- **Harmony is not bundled with the game** — reflection has been sufficient for all phases. If you think you need Harmony, look for a reflection-based approach first.
+
+---
 
 ## DLL Inspection Tools
 
@@ -243,7 +303,7 @@ Found via DLL inspection of `Mafi.Unity.dll`. These are the classes that make up
 | `m_previousSearchQuery` | `string` | Previous search query string |
 | `m_searchResultIndex` | `int` | Index in search results |
 
-**NOTE:** `ResearchDetailUi` is NOT a field — it's a **child component** in the hierarchy. See "ResearchWindow Component Tree" below.
+**NOTE:** `ResearchDetailUi` is a child component in the visual tree, not a field. See "ResearchWindow Component Tree" and "Quick Reference" above.
 
 **Key methods (found via binary string analysis — all private):**
 
@@ -263,37 +323,28 @@ Found via DLL inspection of `Mafi.Unity.dll`. These are the classes that make up
 
 ### ResearchWindow Component Tree (verified at runtime)
 
-```
-ResearchWindow (extends Window)
-└── [Frame] UiComponent
-    ├── UiComponent (shadow/overlay)
-    ├── Column (window chrome)
-    │   ├── WindowBackground
-    │   └── Column (= Body)
-    │       ├── Row                          ← main content row
-    │       │   ├── PanAndZoom               ← scrollable/zoomable research tree
-    │       │   │   └── ScrollBoth → UiComponent (nodes container)
-    │       │   └── ResearchDetailUi         ← RIGHT-HAND DETAIL PANEL (child[1] of Row)
-    │       │       ├── UiComponent
-    │       │       ├── Column → Column
-    │       │       ├── UiComponent
-    │       │       └── UiComponent
-    │       └── PanelTop                     ← bottom toolbar/search bar
-    │           ├── UiComponent
-    │           ├── Row (buttons, search)
-    │           └── UiComponent
-    └── UiComponent (input blocking overlay)
-```
+Navigation path from `ResearchWindow` down to the injection point:
 
-**Key navigation path to inject a sibling panel:**
-`Body` field (from `Window` base) → `AllChildren[0]` (the `Row`) → `AllChildren[1]` is `ResearchDetailUi`. To add our queue panel as a sibling, `Add()` to the same `Row` parent.
+- `ResearchWindow` (extends `Window`)
+  - `[Frame]` UiComponent
+    - UiComponent (shadow/overlay)
+    - `Column` (window chrome)
+      - `WindowBackground`
+      - **`Column` (= `Body`)** — accessible via `Window.Body` field
+        - **`Row` [index 0]** — main content row (FlexGrow, AlignSelfStretch)
+          - **`PanAndZoom` [index 0]** — scrollable/zoomable research tree
+          - **`ResearchDetailUi` [index 1]** — right-hand detail panel (NOT a field — found by searching `AllChildren`)
+        - **`PanelTop` [index 1]** — bottom toolbar/search bar
+    - UiComponent (input blocking overlay)
+
+**Injection point:** `Body.AllChildren[0]` (the `Row`) → call `Row.Add(ourPanel)` to append our queue panel as `AllChildren[2]`, sibling of `ResearchDetailUi`.
 
 ### ResearchDetailUi (`Mafi.Unity.Ui.Research.ResearchDetailUi`)
 
 - **Public class**, extends `Panel` (which extends `PanelBase<Panel, Column>`)
 - This is the **right-hand detail panel** shown when you click a research node
-- **Not a field on ResearchWindow** — it's a **child component** added to `Body → Row` at index 1
-- **No `[GlobalDependency]` attribute** — NOT registered in DI. Created directly by `ResearchWindow`. Cannot be resolved via `DependencyResolver.GetResolvedInstance<ResearchDetailUi>()`.
+- **Not a field on ResearchWindow** — child component at `Body → Row[index 1]` (→ see "ResearchWindow Component Tree")
+- **No `[GlobalDependency]` attribute** — NOT registered in DI; cannot be resolved via `DependencyResolver.GetResolvedInstance<ResearchDetailUi>()` (→ see "Dead Ends")
 - Constructor: `ctor(UiContext, ProtoPopupProvider, NewInstanceOf<InfoPopup>, ResearchManager, OrbitManager)`
 - **Key method:** `void Value(ResearchNode node)` — sets/updates the panel to show details for the given node
 
@@ -421,7 +472,7 @@ object selectedOption = selectedField.GetValue(researchWindow);
   var noneVal = _selectedNodeField.FieldType.GetField("None", BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
   if (noneVal != null) _selectedNodeField.SetValue(_researchWindow, noneVal);
   ```
-- `ResearchDetailUi` is NOT a field on `ResearchWindow` — it's a child component at `Body → Row[0] → child[1]`
+- `ResearchDetailUi` is a child component, not a field (→ see "ResearchWindow Component Tree")
 - The `ResearchWindow+Controller` has only 2 fields: `m_researchManager` (ResearchManager) and `Context` (ControllerContext)
 - The controller's base type is `WindowController<ResearchWindow>` which has the `m_window` field
 
@@ -2114,3 +2165,20 @@ Output includes: inheritance chain, interfaces, constructors, public properties,
 **Note:** Always use `-ExecutionPolicy Bypass` flag — the system execution policy blocks unsigned scripts.
 
 This is more reliable than referencing other mods, which may target outdated game versions.
+
+---
+
+## Dead Ends — What Doesn't Work in Update 4
+
+Approaches that have been tried and confirmed not to work. Do not re-attempt these.
+
+| What | Why it fails |
+|------|-------------|
+| `DependencyResolver.GetResolvedInstance<ResearchWindow>()` | `ResearchWindow` is not registered in DI — only its `Controller` is. Throws at runtime. Find it via the Controller's `m_window` field instead. |
+| `DependencyResolver.GetResolvedInstance<ResearchDetailUi>()` | `ResearchDetailUi` has no `[GlobalDependency]` attribute and is not in DI. It's created directly by `ResearchWindow` as a child component. |
+| `optionType.GetProperty("None")` | `Option<T>.None` is a **static field**, not a property. `GetProperty` silently returns null. Use `GetField("None", BindingFlags.Static | BindingFlags.Public)` instead. |
+| `optionType.GetProperty("Value")` | `Option<T>` has no `.Value` property. Use `ValueOrNull` (returns T or null) with a `HasValue` guard. |
+| `ResearchManager.StopResearch()` to cancel current item | Clears the entire queue, not just the active item. Use `ResearchQueueDequeueCmd` or `CancelResearch` directly. |
+| `ScrollerVisibility.Auto` on a `ScrollColumn` inside an `AlignSelfStretch` panel | The scrollbar never appears. Unity UIToolkit layout bug in this configuration. Use `ScrollerVisibility.AlwaysVisible` instead. |
+| Harmony patching | Harmony is not bundled with the game (no `0Harmony.dll` in Managed/). The official modding repo makes no mention of it. All phases have been implemented via reflection alone. |
+| Accessing `ResearchWindow` in `ControllerActivated` on first open | The window is lazily created — it doesn't exist yet when `ControllerActivated` fires on first open. Defer with `schedule.Execute()`. |
