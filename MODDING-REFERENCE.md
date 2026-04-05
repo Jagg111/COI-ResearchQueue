@@ -69,6 +69,13 @@ These are easy to get wrong. Read before touching any of the areas below.
 Game install path: `C:\Program Files (x86)\Steam\steamapps\common\Captain of Industry`
 Game DLLs: `<game>/Captain of Industry_Data/Managed/` (`Mafi.dll`, `Mafi.Core.dll`, `Mafi.Unity.dll`)
 
+**Game version from DLLs** -- The game DLLs carry version metadata in their file properties. `Mafi.Core.dll` is the most reliable source:
+```powershell
+[System.Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $env:COI_ROOT 'Captain of Industry_Data\Managed\Mafi.Core.dll')).ProductVersion
+# Returns e.g. "0.8.2.0" -- strip trailing ".0" to get "0.8.2"
+```
+Note: The DLL version is numeric only (e.g., `0.8.2`). Hotfix letter suffixes (e.g., the `c` in `0.8.2c` shown on the game's main menu) are not present in DLL metadata.
+
 **ILSpy CLI** (`ilspycmd`) — installed globally via `dotnet tool install -g ilspycmd`. Decompiles game types to readable C# source. Essential for understanding how native UI is built.
 
 ```bash

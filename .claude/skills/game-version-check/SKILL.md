@@ -22,29 +22,24 @@ The ResearchQueue mod depends on internal game code that isn't part of any offic
 
 ## Step 0 -- Determine game version and compare
 
-Read the game's log to find the current version and check it against what the mod was last verified with.
+Read the game version from the installed DLLs and check it against what the mod was last verified with.
 
-1. Find the newest log file in the game's log folder. Run:
+1. Read the version from `Mafi.Core.dll` in the game install directory. Run:
    ```
-   powershell.exe -ExecutionPolicy Bypass -Command "Get-ChildItem '$env:APPDATA\Captain of Industry\Logs' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { Write-Output $_.FullName; Get-Content $_.FullName -TotalCount 10 }"
+   powershell.exe -ExecutionPolicy Bypass -Command "[System.Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $env:COI_ROOT 'Captain of Industry_Data\Managed\Mafi.Core.dll')).ProductVersion"
    ```
+   This returns a version like `0.8.2.0`. Strip the trailing `.0` to get `0.8.2`.
 
-2. In the output, look for a line matching this pattern:
-   ```
-   Build: <number>, v<version> (Update <N>)
-   ```
-   For example: `Build: 559, v0.8.2c (Update 4)`. Extract the version string (e.g., `0.8.2c`).
+2. If `COI_ROOT` is not set or the DLL is not found, ask the user: "I couldn't read the game version from the install directory. What version of Captain of Industry are you running? (You can find this on the game's main menu.)"
 
-3. If no log file exists or no version line is found, ask the user: "I couldn't detect the game version from the logs. What version of Captain of Industry are you running? (You can find this on the game's main menu.)"
+3. Read `manifest.json` and extract the `max_verified_game_version` value.
 
-4. Read `manifest.json` and extract the `max_verified_game_version` value.
-
-5. Show the user a clear comparison:
+4. Show the user a clear comparison:
    - **Current game version:** (what you found)
    - **Max verified version in manifest:** (what manifest.json says)
    - **Match?** Yes / No
 
-6. Remember whether these versions match or differ -- you'll need this in Step 5.
+5. Remember whether these versions match or differ -- you'll need this in Step 5.
 
 Continue to Step 1.
 
@@ -179,14 +174,13 @@ If the versions differ and all checks passed:
 
 1. Tell the user: "The game version has changed and all compatibility checks passed. Let's update the mod to reflect the new verified version."
 
-2. List the three places that need updating:
+2. List the two places that need updating:
    - `manifest.json`: change `max_verified_game_version` from the old version to the new one
-   - `ResearchQueueWindowController.cs` (line 56): change the `MAX_VERIFIED_VERSION` string from the old version to the new one
-   - `README.md` (compatibility table, line 60): change the `(X.Y.Zx verified)` text to show the new version
+   - `README.md` (compatibility table): change the `(X.Y.Z verified)` text to show the new version
 
 3. Ask the user if they'd like to proceed with these updates.
 
-4. If yes, make all three edits.
+4. If yes, make both edits.
 
 5. After the edits are done, tell the user: "Version references updated. You can now run `/ship-it` to publish a new release with the updated game version."
 

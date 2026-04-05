@@ -57,7 +57,7 @@ Press `Win + R`, paste this path, and hit Enter:
 
 | | |
 |---|---|
-| 🎮 **Game version** | Update 4+<br>(0.8.2c verified) |
+| 🎮 **Game version** | Update 4+<br>(0.8.2 verified) |
 | 💾 **Save compatible** | Yes |
 | 🛡️ **Safe to remove** | Yes |
 | 🤝 **Other mods** | No known conflicts |

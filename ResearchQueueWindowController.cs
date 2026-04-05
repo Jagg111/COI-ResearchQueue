@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using Mafi;
 using Mafi.Collections;
@@ -51,9 +52,6 @@ public class ResearchQueueWindowController {
 
 	// Retry limits
 	private const int MAX_DEFERRED_EXTRACTION_ATTEMPTS = 10;
-
-	// Version verified against (keep in sync with max_verified_game_version in manifest.json)
-	private const string MAX_VERIFIED_VERSION = "0.8.2c";
 
 	// ── Reflection health tracking ──────────────────────────────────
 	// All reflection lookups go through ReflectionProbe so the mod can
@@ -256,7 +254,7 @@ public class ResearchQueueWindowController {
 		int passed = 0, failed = 0;
 
 		Log.Info("ResearchQueue: === Health Check ===");
-		Log.Info($"ResearchQueue: Max verified game version: {MAX_VERIFIED_VERSION}");
+		Log.Info($"ResearchQueue: Max verified game version: {ReadMaxVerifiedVersion()}");
 
 		foreach (var r in results) {
 			if (r.Found) {
@@ -280,6 +278,28 @@ public class ResearchQueueWindowController {
 		}
 
 		Log.Info("ResearchQueue: ================================");
+	}
+
+	/// <summary>
+	/// Reads max_verified_game_version from manifest.json next to this DLL.
+	/// Returns "unknown" if the file can't be read or the key isn't found.
+	/// </summary>
+	private static string ReadMaxVerifiedVersion() {
+		try {
+			var modDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+			var text = File.ReadAllText(Path.Combine(modDir, "manifest.json"));
+			var key = "\"max_verified_game_version\"";
+			int keyIndex = text.IndexOf(key);
+			if (keyIndex < 0) return "unknown";
+			int colonIndex = text.IndexOf(':', keyIndex + key.Length);
+			if (colonIndex < 0) return "unknown";
+			int startQuote = text.IndexOf('"', colonIndex + 1);
+			int endQuote = text.IndexOf('"', startQuote + 1);
+			if (startQuote < 0 || endQuote < 0) return "unknown";
+			return text.Substring(startQuote + 1, endQuote - startQuote - 1);
+		} catch {
+			return "unknown";
+		}
 	}
 
 	/// <summary>
