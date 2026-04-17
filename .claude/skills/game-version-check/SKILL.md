@@ -27,7 +27,7 @@ Read the game version from the game's changelog and check it against what the mo
 
 1. Read the first line of `changelog.txt` in the game install directory. Run:
    ```
-   powershell.exe -ExecutionPolicy Bypass -Command "Get-Content (Join-Path $env:COI_ROOT 'changelog.txt') | Select-Object -First 1"
+   powershell.exe -ExecutionPolicy Bypass -Command "& { $r = [System.Environment]::GetEnvironmentVariable('COI_ROOT','User'); if (-not $r) { $r = [System.Environment]::GetEnvironmentVariable('COI_ROOT','Machine') }; Get-Content (Join-Path $r 'changelog.txt') | Select-Object -First 1 }"
    ```
    This returns a line like `v0.8.2c | 2026-03-23`. Strip the leading `v` and everything from ` | ` onward to get the canonical game version (e.g. `0.8.2c`). This includes hotfix letter suffixes when present.
 
@@ -125,7 +125,7 @@ Immediately after receiving the user's manual test feedback, pull the latest log
 
 1. Find the newest log file (the user just played, so there should be a fresh one):
    ```
-   powershell.exe -ExecutionPolicy Bypass -Command "$logPath = Join-Path ([System.Environment]::GetFolderPath('ApplicationData')) 'Captain of Industry\Logs'; Get-ChildItem $logPath -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { Write-Output $_.FullName }"
+   powershell.exe -ExecutionPolicy Bypass -Command "& { $p = Join-Path ([System.Environment]::GetFolderPath('ApplicationData')) 'Captain of Industry\Logs'; Get-ChildItem $p -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName }"
    ```
 
 2. Read the log file and extract all lines containing `ResearchQueue:`.
