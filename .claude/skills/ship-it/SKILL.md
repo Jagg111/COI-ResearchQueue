@@ -136,15 +136,29 @@ Stream the output. If the script fails, show the full error and stop.
 
 ---
 
-## Step 6 -- Done
+## Step 6 -- GitHub draft created
 
 Confirm the GitHub draft release was created successfully.
 
-Remind the user: "Go to [GitHub Releases](https://github.com/Jagg111/COI-ResearchQueue/releases) to review and publish the draft when you're ready."
+Remind the user: "The build is packaged at `bin\githubrelease\ResearchQueue-v<version>.zip`. Next, you'll need to publish to **both** destinations: review and publish the GitHub draft at [GitHub Releases](https://github.com/Jagg111/COI-ResearchQueue/releases), and upload the same zip to the COI Hub (see Step 7)."
 
 Then ask: "Did this release include any visible UI changes?" If yes, remind the user:
 
 > Don't forget to update `screenshots/current.gif` in the repo to reflect the new UI, then commit it. The README links directly to that file.
+
+---
+
+## Step 7 -- Upload to COI Hub
+
+The hub is the primary distribution channel -- players get auto-updates from there. The same zip already uploaded to GitHub also needs to go to the hub. There's no API or CLI for this yet, so it's a manual step.
+
+Tell the user:
+
+> Upload the same zip (`bin\githubrelease\ResearchQueue-v<version>.zip`) to the COI Hub at [hub.coigame.com/Mod/17](https://hub.coigame.com/Mod/17) using the "upload new version" option.
+>
+> - Paste the same What's New bullets from `bin/githubrelease/whats-new.md` as the changelog
+> - License: MIT
+> - Mark the version as **Stable** (or **Beta** if this is a pre-release)
 
 Conclude by saying something fun and lighthearted.
 
