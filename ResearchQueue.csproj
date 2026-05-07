@@ -6,7 +6,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<WarningLevel>9999</WarningLevel>
 		<LangVersion>latest</LangVersion>
-		<Version>0.0.1.0</Version>
+		<!-- Version, AssemblyVersion and AssemblyFileVersion are automatically generated from 'manifest.json' (see ReadJsonVersion target below). -->
 		<COI_MODS>$(APPDATA)\Captain of Industry\Mods</COI_MODS>
 
 		<!-- Set to true to automatically deploy to the mods folder on build -->
@@ -73,6 +73,102 @@
 
 	<Target Name="CheckCoiRoot" BeforeTargets="ResolveAssemblyReferences">
 		<Error Condition="'$(COI_ROOT)' == ''" Text="Environment variable 'COI_ROOT' is not set. Set it to your Captain of Industry install directory." />
+	</Target>
+
+	<!-- Version generator: reads manifest.json and sets assembly version metadata. Inspired by official ExampleMod.csproj, but uses RoslynCodeTaskFactory (works with `dotnet build`) and regex parsing (avoids loading System.Text.Json into MSBuild context). -->
+	<UsingTask TaskName="ProcessManifest" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+
+		<ParameterGroup>
+			<Manifest ParameterType="System.String" Required="true" />
+			<DefaultTitle ParameterType="System.String" Required="true" />
+			<NormalizedVersion Output="true" ParameterType="System.String" />
+			<ManifestVersion Output="true" ParameterType="System.String" />
+			<AuthorName Output="true" ParameterType="System.String" />
+			<DisplayTitle Output="true" ParameterType="System.String" />
+		</ParameterGroup>
+
+		<Task>
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.Text.RegularExpressions" />
+
+			<Code Type="Fragment" Language="cs">
+				<![CDATA[
+					string json;
+					try {
+						json = File.ReadAllText(Manifest);
+					}
+					catch (Exception ex)
+					{
+						Log.LogError("Failed to read manifest.json: " + ex.Message);
+						NormalizedVersion = "0.0.0.0";
+						ManifestVersion = "0.0.0";
+						AuthorName = "Unknown";
+						DisplayTitle = DefaultTitle;
+						return false;
+					}
+
+					// Parse "version": "X.Y.Z[a]" with regex.
+					var versionMatch = Regex.Match(json, "\"version\"\\s*:\\s*\"([^\"]+)\"");
+					ManifestVersion = versionMatch.Success ? versionMatch.Groups[1].Value : "0.0.0";
+
+					// Normalize to four-part assembly version. Letter suffix (a..z) becomes revision number 1..26.
+					var verMatch = Regex.Match(ManifestVersion, @"^(\d+)\.(\d+)(\.(\d+)([a-z]?))?$");
+					if (verMatch.Success)
+					{
+						var major = verMatch.Groups[1].Value;
+						var minor = verMatch.Groups[2].Value;
+						var patch = verMatch.Groups[4].Success ? verMatch.Groups[4].Value : "0";
+						var suffix = verMatch.Groups[5].Value;
+						int revision = string.IsNullOrEmpty(suffix) ? 0 : (char.ToLower(suffix[0]) - 'a' + 1);
+						NormalizedVersion = major + "." + minor + "." + patch + "." + revision;
+					}
+					else
+					{
+						Log.LogError("Invalid version format in manifest.json: " + ManifestVersion);
+						NormalizedVersion = "0.0.0.0";
+					}
+
+					// Parse "authors": [ "X", "Y" ] — flat array of strings.
+					var authorsBlockMatch = Regex.Match(json, "\"authors\"\\s*:\\s*\\[([^\\]]*)\\]");
+					if (authorsBlockMatch.Success)
+					{
+						var names = Regex.Matches(authorsBlockMatch.Groups[1].Value, "\"([^\"]+)\"");
+						var list = new System.Collections.Generic.List<string>();
+						foreach (Match m in names) list.Add(m.Groups[1].Value);
+						AuthorName = list.Count > 0 ? string.Join(", ", list.ToArray()) : "Unknown";
+					}
+					else
+					{
+						AuthorName = "Unknown";
+					}
+
+					var displayMatch = Regex.Match(json, "\"display_name\"\\s*:\\s*\"([^\"]+)\"");
+					DisplayTitle = displayMatch.Success ? displayMatch.Groups[1].Value : DefaultTitle;
+				]]>
+			</Code>
+		</Task>
+	</UsingTask>
+
+	<Target Name="ReadJsonVersion" BeforeTargets="GetAssemblyVersion">
+		<Error Condition="'$(COI_ROOT)' == ''" Text="Environment or project variable 'COI_ROOT' is not set." />
+		<Error Condition="'$(COI_MODS)' == ''" Text="Environment or project variable 'COI_MODS' is not set." />
+
+		<ProcessManifest Manifest="manifest.json" DefaultTitle="$(TargetName)">
+			<Output TaskParameter="NormalizedVersion" PropertyName="VersionNormalized" />
+			<Output TaskParameter="AuthorName" PropertyName="AuthorName" />
+			<Output TaskParameter="DisplayTitle" PropertyName="DisplayTitle" />
+			<Output TaskParameter="ManifestVersion" PropertyName="ManifestVersion" />
+		</ProcessManifest>
+
+		<PropertyGroup>
+			<Version>$(VersionNormalized)</Version>
+			<FileVersion>$(VersionNormalized)</FileVersion>
+			<AssemblyVersion>$(VersionNormalized)</AssemblyVersion>
+			<AssemblyTitle>$(DisplayTitle)</AssemblyTitle>
+			<Product>$(DisplayTitle)</Product>
+			<Company>$(AuthorName)</Company>
+			<Copyright>$(AuthorName)</Copyright>
+		</PropertyGroup>
 	</Target>
 
 	<!-- Deploy to mods folder on build -->
