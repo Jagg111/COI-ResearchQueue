@@ -5,9 +5,9 @@
 ### Stop rebuilding your entire queue when you change your mind. Manage your queue directly in the research tree.
 ![Research Queue panel with drag-and-drop controls inside the research tree](screenshots/current.gif)
 
-[![Last Updated](https://img.shields.io/github/release-date/Jagg111/COI-ResearchQueue?label=Mod%20Last%20Updated&style=flat)](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)
+**[⬇️ Get it on the COI Mod Hub](https://hub.coigame.com/Mod/17)**
 
-**[⬇️ Download Latest Version](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)**
+<sub>[![Last Updated](https://img.shields.io/github/release-date/Jagg111/COI-ResearchQueue?label=Mod%20Last%20Updated&style=flat)](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)</sub>
 </div>
 
 ## 🎯 Why This Mod?
@@ -26,10 +26,22 @@ Without this mod, if you have a queue and want to start new research, your only 
 
 ## 🔔 Updates & Changelog
 
-- Until an official mod portal or third-party distribution is available, the easiest way to get mod updates is to watch this repo. Click **"Watch" → "Custom → Releases"** to get notified when new versions are published.
-- All updates are posted on the [Releases page](https://github.com/Jagg111/COI-ResearchQueue/releases), including what's changed and newest download links.
+- The mod is published on the [COI Mod Hub](https://hub.coigame.com/Mod/17), which handles updates automatically.
+- New versions are also mirrored to the [GitHub Releases page](https://github.com/Jagg111/COI-ResearchQueue/releases) as a backup. If you already follow this repo, click **"Watch" → "Custom → Releases"** to get notified.
 
 ## 📦 Installation
+
+### Recommended: COI Mod Hub (one-click)
+
+1. Open the [Research Queue mod page on the COI Mod Hub](https://hub.coigame.com/Mod/17) and follow the install instructions there.
+2. Launch the game, but **do NOT click Continue** - you don't get the option to enable mods there - **click Load**
+3. Click the **"Mods & DLCs"** button, enable the mod, then load your save.
+
+Once in-game, open the research tree and the queue panel will appear when no research nodes are selected.
+
+### Backup: Manual install from GitHub
+
+If you can't use the hub, you can install the mod manually:
 
 1. **[⬇️ Download the latest release](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)** (`.zip` file)
 2. Extract the zip file
@@ -45,9 +57,7 @@ Without this mod, if you have a queue and want to start new research, your only 
        ResearchQueue.dll
        manifest.json
    ```
-4. Launch the game, but **do NOT click Continue** - you don't get the option to enable mods there - **click Load**
-5. Click the **"Mods & DLCs"** button, enable the mod, then load your save.
-Once in-game, open the research tree and the queue panel will appear when no research nodes are selected.
+4. Launch the game and enable the mod as described above.
 
 ## ⭐ Support
 
@@ -79,4 +89,8 @@ If you find this mod useful, consider starring the repo ⭐ - it helps others di
 ## 🐛 Feedback & Bug Reports
 
 Got a suggestion or found a bug? Hop over to [discussions](https://github.com/Jagg111/COI-ResearchQueue/discussions) and let me know!
+
+---
+
+<sub>This mod follows the official Captain of Industry [modding policy](https://www.captain-of-industry.com/modding-policy).</sub>
 
