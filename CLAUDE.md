@@ -15,6 +15,19 @@ The maintainer developing the mod and prompting is a not a programmer by trade. 
 - **Framework:** Mafi (.NET 4.8)
 - **Mod type:** `IMod`
 
+## Distribution
+
+- **Primary:** [COI Mod Hub](https://hub.coigame.com/Mod/17) — handles updates automatically for players
+- **Backup:** [GitHub Releases](https://github.com/Jagg111/COI-ResearchQueue/releases) — for manual install if the hub isn't available
+- **License:** MIT
+- Follows the official Captain of Industry [modding policy](https://www.captain-of-industry.com/modding-policy)
+
+## External Resources
+
+- **Hub mod page:** https://hub.coigame.com/Mod/17
+- **Modding policy:** https://www.captain-of-industry.com/modding-policy
+- **Official modding repo (local clone):** `C:\Code\Captain-of-industry-modding`
+
 ## Project Structure
 
 ```
@@ -22,7 +35,7 @@ ResearchQueue.sln          # Visual Studio solution
 ResearchQueue.csproj       # Project file (build config, references, auto-deploy)
 ResearchQueue.cs           # Main mod entry point
 ResearchQueueWindowController.cs  # Queue panel injected into research tree (auto-registered via DI)
-manifest.json                # Mod metadata (id, version, authors, dependencies, etc.)
+manifest.json                # Mod metadata (id, version, authors, dependencies, etc. — see Manifest Fields below)
 bin/                         # Build output (gitignored)
 obj/                         # Build intermediates (gitignored)
 ```
@@ -46,9 +59,19 @@ On build, the mod is automatically deployed to `%APPDATA%\Captain of Industry\Mo
 - `manifest.json` — mod metadata
 - `ResearchQueue.pdb` — debug symbols (Debug builds only)
 
-## GitHub Release Packaging
+## Manifest Fields
 
-The skill `/ship-it` will create a new GitHub release. The skill handles everything end-to-end including mod version bumps and release notes -- see `.claude/skills/ship-it/SKILL.md` for details.
+`manifest.json` supports several optional fields beyond the basics. Useful ones currently available:
+
+- `description_long` — multi-paragraph description shown on the hub mod page (supports `\n` newlines)
+- `mod_dependencies` — array of mod IDs that must be loaded for this mod to work
+- `optional_mod_dependencies` — array of mod IDs that integrate with this mod if present, but aren't required
+- `incompatible_mods` — array of mod IDs that cannot be loaded alongside this mod
+- `primary_mod_class_name` — explicit class name for the mod entry point (otherwise auto-detected)
+
+## Release Workflow
+
+The skill `/ship-it` will create a new release. It handles everything end-to-end: version bump, release notes, packaging, GitHub draft release creation, and reminding the user to upload the new build to the COI Mod Hub (the primary distribution channel). See `.claude/skills/ship-it/SKILL.md` for details.
 
 - `manifest.json` -- version is the source of truth for release tags and titles
 - `create-github-release.ps1` -- the underlying packaging script called by `/ship-it`; can also be run standalone
