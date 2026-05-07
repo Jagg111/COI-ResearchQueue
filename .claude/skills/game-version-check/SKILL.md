@@ -183,7 +183,7 @@ If the versions differ and all checks passed:
 
 4. If yes, make both edits.
 
-5. After the edits are done, tell the user: "Version references updated. You can now run `/ship-it` to publish a new release with the updated game version."
+5. After the edits are done, tell the user: "Version references updated. You can now run `/ship-it` to publish a new release with the updated game version. Once the release is out, don't forget to update the max-verified-game-version and any compatibility info on the hub listing at https://hub.coigame.com/Mod/17 — that step is manual."
 
 ---
 
