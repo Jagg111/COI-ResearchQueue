@@ -1,6 +1,8 @@
 # COI Modding Reference
 
-Technical deep-dive on game APIs and modding patterns for **Update 4 (v0.8.2c)**. Everything here has been verified by direct DLL inspection or in-game testing. See CLAUDE.md for project overview and scope.
+Technical deep-dive on game APIs and modding patterns for **Captain of Industry Update 4+**. Everything here has been verified by direct DLL inspection or in-game testing. See CLAUDE.md for project overview and scope.
+
+> **Notice:** This document includes short excerpts of and references to Captain of Industry game code (type names, method signatures, field names, and small code samples) as reasonably necessary to develop and maintain this mod. Any such Game Code is © MaFi Games and is used only under the [Captain of Industry Modding Policy](https://www.captain-of-industry.com/modding-policy). It is **not** covered by this repository's MIT license.
 
 ## Quick Reference
 

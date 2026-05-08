@@ -19,3 +19,20 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Captain of Industry Game Code carve-out
+=======================================
+
+This repository may contain short excerpts of, or references to, Captain of
+Industry game code -- including type names, method signatures, field names,
+small code samples, and reflection patterns -- most notably in
+`MODDING-REFERENCE.md` and the reflection helpers in the mod source.
+
+Any such Game Code is the property of MaFi Games and is included solely under
+the terms of the Captain of Industry Modding Policy
+(https://www.captain-of-industry.com/modding-policy). The MIT License above
+applies only to this mod's own original code and documentation, and does NOT
+grant any rights to MaFi Games' Game Code. Use of any Game Code excerpts is
+governed by the Captain of Industry Modding Policy.
