@@ -75,7 +75,9 @@ If you find this mod useful, consider starring the repo ⭐ - it helps others di
 
 ## 🐛 Feedback & Bug Reports
 
-Got a suggestion or found a bug? Hop over to [discussions](https://github.com/Jagg111/COI-ResearchQueue/discussions) and let me know!
+Got a suggestion or found a bug?
+- **[COI Hub mod forum](https://hub.coigame.com/Mod/17)** — preferred, keeps discussion alongside the mod
+- **[GitHub Discussions](https://github.com/Jagg111/COI-ResearchQueue/discussions)** — also monitored
 
 ---
 

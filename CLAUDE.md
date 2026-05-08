@@ -36,6 +36,7 @@ ResearchQueue.cs           # Main mod entry point
 ResearchQueueWindowController.cs  # Queue panel injected into research tree (auto-registered via DI)
 manifest.json                # Mod metadata (id, version, authors, dependencies, etc. — see Manifest Fields below)
 changelog.txt                # Cumulative player-facing changelog; bundled in every release zip
+readme.txt                   # Plain-text install instructions; bundled in every release zip
 bin/                         # Build output (gitignored)
 obj/                         # Build intermediates (gitignored)
 ```
@@ -46,7 +47,7 @@ obj/                         # Build intermediates (gitignored)
 - `COI_ROOT` — path to the Captain of Industry game install directory (e.g., Steam folder)
 
 ### Build
-Open `ResearchQueue.sln` in Visual Studio and build, or run from `C:\Code\CaptainOfIndustry`:
+Open `ResearchQueue.sln` in Visual Studio and build, or run from the project root (`C:\Code\COI-research-queue`):
 ```
 dotnet build ResearchQueue.sln
 ```
@@ -61,13 +62,53 @@ On build, the mod is automatically deployed to `%APPDATA%\Captain of Industry\Mo
 
 ## Manifest Fields
 
-`manifest.json` supports several optional fields beyond the basics. Useful ones currently available:
+`manifest.json` fields — required and optional. Character limits are enforced by the Hub and **cannot be changed after a version is uploaded**.
 
-- `description_long` — multi-paragraph description shown on the hub mod page (supports `\n` newlines)
+**Required:**
+- `id` — unique mod identifier, pattern `[a-zA-Z0-9][a-zA-Z0-9_-]*`, must not start with `COI-`
+- `version` — format `major.minor[.patch[letter]]` (e.g. `1.0.1`, `0.8.2c`)
+- `primary_dlls` — array of DLL filenames to load
+
+**Optional (Hub-visible):**
+- `display_name` — max 50 chars; shown as the mod title on the Hub
+- `description_short` — max 180 chars; shown in Hub search results and mod listings
+- `description_long` — full mod page description; supports `\n` for newlines
+- `links` — array of URLs shown on the Hub mod page (e.g. GitHub repo)
+- `authors` — author name or array of names
+- `min_game_version` — minimum game version required
+- `max_verified_game_version` — highest game version tested; update this after each game update check
+
+**Optional (behavior flags):**
+- `non_locking_dll_load` — if true, DLL loaded into memory rather than locked on disk (allows hot-reload during dev)
+- `can_add_to_saved_game` — whether the mod can be added to an existing save
+- `can_remove_from_saved_game` — whether the mod can be safely removed from a save
 - `mod_dependencies` — array of mod IDs that must be loaded for this mod to work
 - `optional_mod_dependencies` — array of mod IDs that integrate with this mod if present, but aren't required
 - `incompatible_mods` — array of mod IDs that cannot be loaded alongside this mod
 - `primary_mod_class_name` — explicit class name for the mod entry point (otherwise auto-detected)
+
+## Hub Packaging Requirements
+
+The COI Hub is strict about what it expects in the zip and what it can display. Key rules learned the hard way:
+
+- **ZIP structure:** The zip must contain the mod folder as its root (e.g. `ResearchQueue/manifest.json`), so players can extract directly into their `Mods/` folder. Our script handles this automatically.
+- **Required files in zip:** `ResearchQueue.dll`, `manifest.json`, `changelog.txt`
+- **Recommended files in zip:** `readme.txt` (plain text install instructions)
+- **`changelog.txt` format** — plain text, cumulative, newest entry first:
+  ```
+  v1.0.1 | 2026-05-07
+  * Bullet one
+  * Bullet two
+
+  v1.0.0 | 2026-05-07
+  * Initial release
+  ```
+  The Hub parses this automatically — no manual pasting needed. Strip any markdown from bullets (plain text only).
+- **Manifest field limits** — `display_name` max 50 chars, `description_short` max 180 chars. These **cannot be edited after a version is uploaded**, so verify before packaging.
+- **Versions cannot be deleted or edited** once uploaded to the Hub. Always verify the zip contents before uploading.
+- **Output zip:** `package-release.ps1` writes to `bin\pkg\ResearchQueue-v<version>.zip`
+- **License:** MIT (set in Hub UI at upload time, not in the zip)
+- **Distribution is manual:** The Hub does not auto-update players. Each new version must be downloaded and installed by the player.
 
 ## Release Workflow
 
@@ -114,7 +155,7 @@ This project uses **Semantic Versioning** (`MAJOR.MINOR.PATCH`):
 
 **Rules:**
 - Do NOT bump for docs-only, build script, or comment-only changes
-- If unsure then remind the user about semenatic versioning and ask what their preference is
+- If unsure then remind the user about semantic versioning and ask what their preference is
 - `manifest.json` version is always the source of truth
 
 **End-of-session workflow:**

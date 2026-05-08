@@ -62,6 +62,11 @@ Copy-Item -LiteralPath $dllPath        -Destination (Join-Path $stagingRoot "$mo
 Copy-Item -LiteralPath $manifestPath   -Destination (Join-Path $stagingRoot "manifest.json")
 Copy-Item -LiteralPath $changelogSrc   -Destination (Join-Path $stagingRoot "changelog.txt")
 
+$readmeSrc = Join-Path $repoRoot "readme.txt"
+if (Test-Path $readmeSrc) {
+    Copy-Item -LiteralPath $readmeSrc -Destination (Join-Path $stagingRoot "readme.txt")
+}
+
 Compress-Archive -Path $stagingRoot -DestinationPath $zipPath -Force
 if (-not (Test-Path $zipPath)) {
     Fail "Release zip was not created at $zipPath"

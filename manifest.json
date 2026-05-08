@@ -1,15 +1,15 @@
 {
 	"id": "ResearchQueue",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"display_name": "Research Queue",
-	"description_short": "Lets players manage their research queue.",
-	"description_long": "Without this mod, if you have a research queue and want to start something new, your only option is to clear the entire queue and rebuild it one item at a time. There's also no way to rearrange items once they're queued.\n\nResearch Queue solves this by adding a queue management panel directly inside the research tree.\n\nFeatures:\n- Integrated UI: panel appears inside the research tree and feels like a native feature\n- Drag-and-drop reordering of your research queue\n- Start or remove items directly from the queue\n- Live research visibility: see what's actively being researched and its progress\n- Works on existing saves: install and go, no new game required\n\nSafe to install and remove: the mod uses the game's existing research queue data and does not create its own save data. If you remove the mod, your queue stays exactly as-is.",
+	"description_short": "Drag-and-drop research queue management built right into the research tree. Reorder, start, or remove queued items without ever clearing your queue and starting over.",
+	"description_long": "Want to start new research but already have a queue? Without this mod, your only option is to clear everything and rebuild it from scratch, one item at a time.\n\nResearch Queue adds a queue management panel directly inside the research tree, so you can reorder, start, or remove items without ever leaving the screen.\n\nFeatures:\n- Drag-and-drop reordering of your research queue\n- Start or remove items directly from the queue panel\n- See what is actively being researched and its progress\n- Feels like a native part of the research tree, not a separate overlay\n- Works on existing saves, install and go, no new game required\n\nSafe to remove: the mod uses the game's own queue data and creates no save data of its own. Remove it anytime and your queue stays exactly as-is.",
 	"primary_dlls": [ "ResearchQueue.dll" ],
 	"non_locking_dll_load": true,
 	"can_add_to_saved_game": true,
 	"can_remove_from_saved_game": true,
 	"authors": [ "Jagg111" ],
-	"links": [],
+	"links": [ "https://github.com/Jagg111/COI-ResearchQueue" ],
 	"min_game_version": "0.8.0",
 	"max_verified_game_version": "0.8.4"
 }

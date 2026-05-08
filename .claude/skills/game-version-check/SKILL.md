@@ -14,7 +14,7 @@ The ResearchQueue mod depends on internal game code that isn't part of any offic
 
 | File | What it does |
 |------|-------------|
-| `changelog.txt` | The game's own changelog, located in the game install directory (`$COI_ROOT`). The first line is always the current version (e.g. `v0.8.2c | 2026-03-23`), including hotfix letter suffixes. This is the version source used in Step 0. |
+| `changelog.txt` (game's, not the mod's) | The game's own changelog, located in the game install directory (`$COI_ROOT`). The first line is always the current version (e.g. `v0.8.2c | 2026-03-23`), including hotfix letter suffixes. This is the version source used in Step 0. Note: the mod repo also has a `changelog.txt` at its root -- that is the player-facing mod changelog, not this file. |
 | `check-reflection-targets.ps1` | The diagnostic script. Reads the mod's source code to find every internal game reference, then checks each one against the actual game files. No separate list to maintain -- it always matches what's in the code. |
 | `inspect_dll.ps1` | A deeper inspection tool. When something breaks, this shows you what a game type looks like now so you can spot what changed (renamed, moved, etc.). |
 | `ResearchQueueWindowController.cs` | The mod's main code file. Contains all the `ReflectionProbe.*` calls that define what internal game code the mod depends on. |
