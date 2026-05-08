@@ -16,11 +16,11 @@ When you're ready to publish a new version of the mod, this skill walks you thro
 |------|-------------|
 | `manifest.json` | Mod version -- the source of truth for release tags and titles |
 | `changelog.txt` | Cumulative player-facing changelog; updated each release and bundled inside the mod ZIP |
-| `bin/release/whats-new.md` | Release notes draft -- written during this workflow as a working buffer |
+| `bin/pkg/whats-new.md` | Release notes draft -- written during this workflow as a working buffer |
 | `package-release.ps1` | Packaging script that builds the zip for Hub upload |
 
 **Test mode:** If the user invoked `/ship-it --test`, follow all steps but:
-- Do NOT write `bin/release/whats-new.md`
+- Do NOT write `bin/pkg/whats-new.md`
 - Do NOT edit `manifest.json` or `changelog.txt`
 - Do NOT run `package-release.ps1`
 - Instead, show what *would* happen at each of those steps and label the output clearly with `[TEST RUN -- not applied]`
@@ -33,7 +33,7 @@ At the end of a test run, say "Test run complete -- nothing was written or commi
 
 Check whether a `whats-new.md` from a previous run is still sitting around.
 
-Check whether `bin/release/whats-new.md` already exists.
+Check whether `bin/pkg/whats-new.md` already exists.
 
 - If it does **not** exist: continue to Step 1.
 - If it **does** exist: show the user its contents and ask: "A `whats-new.md` from a previous run exists. What would you like to do -- use it as a starting point, discard it, or cancel?"
@@ -97,7 +97,7 @@ Then write the bullets using these rules:
 
 Apply any edits the user requests. Once they approve:
 
-1. Write the final bullets to `bin/release/whats-new.md` (create the folder if needed).
+1. Write the final bullets to `bin/pkg/whats-new.md` (create the folder if needed).
 2. Prepend a new entry to `changelog.txt` in the project root using the Hub format:
    ```
    vX.X.X | YYYY-MM-DD
@@ -156,7 +156,7 @@ The COI Hub is the exclusive distribution channel. Players download and install 
 
 Tell the user:
 
-> Your release zip is ready at `bin\release\ResearchQueue-v<version>.zip`.
+> Your release zip is ready at `bin\pkg\ResearchQueue-v<version>.zip`.
 >
 > Upload it to the COI Hub at [hub.coigame.com/Mod/17](https://hub.coigame.com/Mod/17) using the "upload new version" option.
 >

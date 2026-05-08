@@ -33,7 +33,7 @@ $modId   = [string]$manifest.id
 $version = [string]$manifest.version
 $tag     = "v$version"
 
-$releaseRoot  = Join-Path $repoRoot "bin\release"
+$releaseRoot  = Join-Path $repoRoot "bin\pkg"
 $stagingRoot  = Join-Path $releaseRoot $modId
 $dllPath      = Join-Path $repoRoot "bin\Release\net48\$modId.dll"
 $zipPath      = Join-Path $releaseRoot ("{0}-{1}.zip" -f $modId, $tag)
