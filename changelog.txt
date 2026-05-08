@@ -1,0 +1,3 @@
+v1.0.0 | 2026-05-07
+* Verified compatibility with Captain of Industry v0.8.4 -- no functional changes, the mod works exactly as before
+* Version 1.0.0 marks the official release on the COI Mod Hub -- find it at hub.coigame.com/Mod/17

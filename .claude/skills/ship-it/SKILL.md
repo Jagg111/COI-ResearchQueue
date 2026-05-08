@@ -1,6 +1,6 @@
 ---
 name: ship-it
-description: Run when code changes are ready to release. Handles pre-flight checks, version bump, AI-drafted What's New bullets (reviewed in-session), commit message suggestion, and GitHub draft release creation.
+description: Run when code changes are ready to release. Handles pre-flight checks, version bump, AI-drafted What's New bullets (reviewed in-session), changelog.txt update, packaging, and COI Hub upload reminder.
 disable-model-invocation: true
 ---
 
@@ -8,20 +8,21 @@ Walk through each step in order. Stop and report clearly if anything fails.
 
 ## What this does and why
 
-When you're ready to publish a new version of the mod, this skill walks you through the full release process. It checks that your code is clean and on the right branch, helps you pick a version number, writes player-friendly release notes based on what actually changed in the code, and creates a draft release on GitHub for you to review before publishing.
+When you're ready to publish a new version of the mod, this skill walks you through the full release process. It checks that your code is clean and on the right branch, helps you pick a version number, writes player-friendly release notes, updates the changelog, packages the zip, and reminds you to upload to the COI Mod Hub.
 
 ## Key files
 
 | File | What it does |
 |------|-------------|
 | `manifest.json` | Mod version -- the source of truth for release tags and titles |
-| `bin/githubrelease/whats-new.md` | Release notes draft -- written during this workflow, picked up by the release script |
-| `create-github-release.ps1` | Packaging script that builds the zip and creates the GitHub draft release |
+| `changelog.txt` | Cumulative player-facing changelog; updated each release and bundled inside the mod ZIP |
+| `bin/release/whats-new.md` | Release notes draft -- written during this workflow as a working buffer |
+| `package-release.ps1` | Packaging script that builds the zip for Hub upload |
 
 **Test mode:** If the user invoked `/ship-it --test`, follow all steps but:
-- Do NOT write `bin/githubrelease/whats-new.md`
-- Do NOT edit `manifest.json`
-- Do NOT run `create-github-release.ps1`
+- Do NOT write `bin/release/whats-new.md`
+- Do NOT edit `manifest.json` or `changelog.txt`
+- Do NOT run `package-release.ps1`
 - Instead, show what *would* happen at each of those steps and label the output clearly with `[TEST RUN -- not applied]`
 
 At the end of a test run, say "Test run complete -- nothing was written or committed."
@@ -32,7 +33,7 @@ At the end of a test run, say "Test run complete -- nothing was written or commi
 
 Check whether a `whats-new.md` from a previous run is still sitting around.
 
-Check whether `bin/githubrelease/whats-new.md` already exists.
+Check whether `bin/release/whats-new.md` already exists.
 
 - If it does **not** exist: continue to Step 1.
 - If it **does** exist: show the user its contents and ask: "A `whats-new.md` from a previous run exists. What would you like to do -- use it as a starting point, discard it, or cancel?"
@@ -46,11 +47,10 @@ Check whether `bin/githubrelease/whats-new.md` already exists.
 
 Make sure the workspace is in a clean state and ready to release.
 
-Run all three checks. If any fail, report what's wrong and stop -- do not continue.
+Run both checks. If either fails, report what's wrong and stop -- do not continue.
 
 1. Run `git status --porcelain` -- output must be empty (clean working tree)
 2. Run `git branch --show-current` -- must output `main`
-3. Run `gh auth status` -- must succeed (exit code 0)
 
 If everything passes, say "Pre-flight checks passed." and continue.
 
@@ -61,10 +61,9 @@ If everything passes, say "Pre-flight checks passed." and continue.
 Show the user what's changed since the last release so they can pick the right version bump.
 
 1. Read `manifest.json` and show the user the current version
-2. Run `git fetch --tags` to ensure all remote tags are present locally
-3. Run `git tag --sort=-creatordate` to find the most recent tag (call it `$prevTag`). If no tags exist, note that this will be the first release.
-4. Run `git log $prevTag..HEAD --pretty=format:"%s%n%b"` (or `git log HEAD --pretty=format:"%s%n%b"` if no tags) to capture both subject and body of each commit
-5. Show the user the raw commit list, including any issue references found in commit bodies
+2. Run `git tag --sort=-creatordate` to find the most recent tag (call it `$prevTag`). If no tags exist, note that this will be the first release.
+3. Run `git log $prevTag..HEAD --pretty=format:"%s%n%b"` (or `git log HEAD --pretty=format:"%s%n%b"` if no tags) to capture both subject and body of each commit
+4. Show the user the raw commit list, including any issue references found in commit bodies
 
 Then ask the user which version bump to apply. Show the current version and these options:
 - **Patch (0.0.X)** -- bug fixes and small tweaks. When in doubt, use this.
@@ -96,13 +95,26 @@ Then write the bullets using these rules:
 
 **Show the bullets inline in the conversation** and ask: "Any tweaks before I save these?"
 
-Apply any edits the user requests. Once they approve, write the final bullets to `bin/githubrelease/whats-new.md` (create the folder if it doesn't exist). Confirm the file was written.
+Apply any edits the user requests. Once they approve:
+
+1. Write the final bullets to `bin/release/whats-new.md` (create the folder if needed).
+2. Prepend a new entry to `changelog.txt` in the project root using the Hub format:
+   ```
+   vX.X.X | YYYY-MM-DD
+   * Bullet one
+   * Bullet two
+   ```
+   - Use today's date in `YYYY-MM-DD` format
+   - Convert `-` bullet markers to `*`
+   - Strip any markdown link syntax from bullets (plain text only -- the Hub renders changelog.txt as plain text)
+   - Leave a blank line between this new entry and the previous one
+3. Confirm both files were written.
 
 ---
 
-## Step 4 -- Bump version and suggest commit message
+## Step 4 -- Bump version and commit
 
-Update the version number and give the user a ready-to-run commit command.
+Update the version number and commit everything together.
 
 1. Calculate the new version from the user's choice in Step 2 and edit `manifest.json` with the new version string
 2. Suggest a commit message following the project's style:
@@ -112,53 +124,49 @@ Update the version number and give the user a ready-to-run commit command.
 3. Tell the user exactly what to run:
 
 ```
-git add manifest.json
+git add manifest.json changelog.txt
 git commit -m "<suggested message here>"
+git tag v<version>
+git push && git push --tags
 ```
 
-4. **Wait** for the user to confirm they've committed before continuing. Never commit on their behalf.
+4. **Wait** for the user to confirm they've committed and pushed before continuing. Never commit on their behalf.
 
 ---
 
-## Step 5 -- Create the GitHub draft release
+## Step 5 -- Package the release
 
-Package the mod and create the draft release on GitHub.
+Build and package the mod zip for Hub upload.
 
 Once the user confirms they've committed, run:
 
 ```
-.\create-github-release.ps1
+.\package-release.ps1
 ```
 
-The script will automatically pick up `bin/githubrelease/whats-new.md` for the What's New section.
+The script builds the DLL, stages `ResearchQueue.dll`, `manifest.json`, and `changelog.txt` into the zip, and outputs the final zip path.
 
 Stream the output. If the script fails, show the full error and stop.
 
 ---
 
-## Step 6 -- GitHub draft created
+## Step 6 -- Upload to COI Hub
 
-Confirm the GitHub draft release was created successfully.
+The COI Hub is the exclusive distribution channel. Players download and install updates manually from there.
 
-Remind the user: "The build is packaged at `bin\githubrelease\ResearchQueue-v<version>.zip`. Next, you'll need to publish to **both** destinations: review and publish the GitHub draft at [GitHub Releases](https://github.com/Jagg111/COI-ResearchQueue/releases), and upload the same zip to the COI Hub (see Step 7)."
+Tell the user:
+
+> Your release zip is ready at `bin\release\ResearchQueue-v<version>.zip`.
+>
+> Upload it to the COI Hub at [hub.coigame.com/Mod/17](https://hub.coigame.com/Mod/17) using the "upload new version" option.
+>
+> - The Hub will automatically parse `changelog.txt` from inside the zip and display it -- no need to paste anything manually
+> - License: MIT
+> - Mark the version as **Stable** (or **Beta** if this is a pre-release)
 
 Then ask: "Did this release include any visible UI changes?" If yes, remind the user:
 
 > Don't forget to update `screenshots/current.gif` in the repo to reflect the new UI, then commit it. The README links directly to that file.
-
----
-
-## Step 7 -- Upload to COI Hub
-
-The hub is the primary distribution channel -- players get auto-updates from there. The same zip already uploaded to GitHub also needs to go to the hub. There's no API or CLI for this yet, so it's a manual step.
-
-Tell the user:
-
-> Upload the same zip (`bin\githubrelease\ResearchQueue-v<version>.zip`) to the COI Hub at [hub.coigame.com/Mod/17](https://hub.coigame.com/Mod/17) using the "upload new version" option.
->
-> - Paste the same What's New bullets from `bin/githubrelease/whats-new.md` as the changelog
-> - License: MIT
-> - Mark the version as **Stable** (or **Beta** if this is a pre-release)
 
 Conclude by saying something fun and lighthearted.
 
@@ -167,5 +175,6 @@ Conclude by saying something fun and lighthearted.
 ## Notes
 
 - The What's New bullets are written for players, not developers. Commits that only affect build scripts, docs, or code comments are intentionally left out of the release notes.
-- The release script (`create-github-release.ps1`) can also be run standalone outside of this workflow if needed.
-- If `gh auth status` fails in pre-flight, the user needs to run `gh auth login` first.
+- `changelog.txt` is plain text -- strip markdown link syntax when writing to it. The Hub does not render markdown.
+- `package-release.ps1` can also be run standalone outside of this workflow if needed, as long as `changelog.txt` exists and is up to date.
+- The COI Hub does NOT provide automatic updates to players. Players must manually download and install each new version.

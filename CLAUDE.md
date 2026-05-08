@@ -17,8 +17,7 @@ The maintainer developing the mod and prompting is a not a programmer by trade. 
 
 ## Distribution
 
-- **Primary:** [COI Mod Hub](https://hub.coigame.com/Mod/17) — handles updates automatically for players
-- **Backup:** [GitHub Releases](https://github.com/Jagg111/COI-ResearchQueue/releases) — for manual install if the hub isn't available
+- **Exclusive:** [COI Mod Hub](https://hub.coigame.com/Mod/17) — the only distribution channel. Players download and install updates manually from there.
 - **License:** MIT
 - Follows the official Captain of Industry [modding policy](https://www.captain-of-industry.com/modding-policy)
 
@@ -36,6 +35,7 @@ ResearchQueue.csproj       # Project file (build config, references, auto-deploy
 ResearchQueue.cs           # Main mod entry point
 ResearchQueueWindowController.cs  # Queue panel injected into research tree (auto-registered via DI)
 manifest.json                # Mod metadata (id, version, authors, dependencies, etc. — see Manifest Fields below)
+changelog.txt                # Cumulative player-facing changelog; bundled in every release zip
 bin/                         # Build output (gitignored)
 obj/                         # Build intermediates (gitignored)
 ```
@@ -71,10 +71,11 @@ On build, the mod is automatically deployed to `%APPDATA%\Captain of Industry\Mo
 
 ## Release Workflow
 
-The skill `/ship-it` will create a new release. It handles everything end-to-end: version bump, release notes, packaging, GitHub draft release creation, and reminding the user to upload the new build to the COI Mod Hub (the primary distribution channel). See `.claude/skills/ship-it/SKILL.md` for details.
+The skill `/ship-it` will create a new release. It handles everything end-to-end: version bump, What's New drafting, `changelog.txt` update, packaging, and reminding the user to upload to the COI Mod Hub. See `.claude/skills/ship-it/SKILL.md` for details.
 
 - `manifest.json` -- version is the source of truth for release tags and titles
-- `create-github-release.ps1` -- the underlying packaging script called by `/ship-it`; can also be run standalone
+- `changelog.txt` -- cumulative changelog updated each release; bundled inside the zip so the Hub parses it automatically
+- `package-release.ps1` -- the underlying packaging script called by `/ship-it`; can also be run standalone
 
 ## Health Checks & Game Version Compatibility
 
@@ -118,8 +119,7 @@ This project uses **Semantic Versioning** (`MAJOR.MINOR.PATCH`):
 
 **End-of-session workflow:**
 1. If code changes were made during the session, ask the user if a version bump is needed
-2. If yes, run `/ship-it` — it handles version bump, What's New drafting, commit message suggestion, packaging, and GitHub draft release creation end-to-end
-3. The user can then go directly to GitHub and publish the draft
+2. If yes, run `/ship-it` — it handles version bump, What's New drafting, changelog update, packaging, and Hub upload reminder end-to-end
 
 ## Documentation Rules (IMPORTANT)
 

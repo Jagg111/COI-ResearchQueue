@@ -6,8 +6,6 @@
 ![Research Queue panel with drag-and-drop controls inside the research tree](screenshots/current.gif)
 
 **[⬇️ Get it on the COI Mod Hub](https://hub.coigame.com/Mod/17)**
-
-<sub>[![Last Updated](https://img.shields.io/github/release-date/Jagg111/COI-ResearchQueue?label=Mod%20Last%20Updated&style=flat)](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)</sub>
 </div>
 
 ## 🎯 Why This Mod?
@@ -26,38 +24,27 @@ Without this mod, if you have a queue and want to start new research, your only 
 
 ## 🔔 Updates & Changelog
 
-- The mod is published on the [COI Mod Hub](https://hub.coigame.com/Mod/17), which handles updates automatically.
-- New versions are also mirrored to the [GitHub Releases page](https://github.com/Jagg111/COI-ResearchQueue/releases) as a backup. If you already follow this repo, click **"Watch" → "Custom → Releases"** to get notified.
+New versions are published to the [COI Mod Hub](https://hub.coigame.com/Mod/17). Check there for updates -- you'll need to download and install each new version manually.
 
 ## 📦 Installation
 
-### Recommended: COI Mod Hub (one-click)
-
-1. Open the [Research Queue mod page on the COI Mod Hub](https://hub.coigame.com/Mod/17) and follow the install instructions there.
-2. Launch the game, but **do NOT click Continue** - you don't get the option to enable mods there - **click Load**
-3. Click the **"Mods & DLCs"** button, enable the mod, then load your save.
-
-Once in-game, open the research tree and the queue panel will appear when no research nodes are selected.
-
-### Backup: Manual install from GitHub
-
-If you can't use the hub, you can install the mod manually:
-
-1. **[⬇️ Download the latest release](https://github.com/Jagg111/COI-ResearchQueue/releases/latest)** (`.zip` file)
-2. Extract the zip file
-3. Copy the **`ResearchQueue`** folder into your mods directory:
+1. Open the [Research Queue mod page on the COI Mod Hub](https://hub.coigame.com/Mod/17) and download the latest version
+2. Extract the zip file and copy the **`ResearchQueue`** folder into your mods directory:
    ```
    %APPDATA%\Captain of Industry\Mods\
    ```
    *💡 Tip: press `Win + R`, paste the path above, and hit Enter to jump straight there.*
 
-   Your Mods folder structure should look like this:
+   Your mods folder should look like this:
    ```
    Mods\ResearchQueue\
        ResearchQueue.dll
        manifest.json
    ```
-4. Launch the game and enable the mod as described above.
+3. Launch the game, but **do NOT click Continue** - you don't get the option to enable mods there - **click Load**
+4. Click the **"Mods & DLCs"** button, enable the mod, then load your save.
+
+Once in-game, open the research tree and the queue panel will appear when no research nodes are selected.
 
 ## ⭐ Support
 
