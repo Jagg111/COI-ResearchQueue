@@ -23,6 +23,8 @@ The ResearchQueue mod depends on internal game code that isn't part of any offic
 
 ## Step 0 -- Determine game version and compare
 
+> ⚠️ Use the **PowerShell tool** (not Bash) for all commands in this skill — the Bash tool strips `$` variable references and will fail.
+
 Read the game version from the game's changelog and check it against what the mod was last verified with.
 
 1. Read the first line of `changelog.txt` in the game install directory. Run:
@@ -183,7 +185,14 @@ If the versions differ and all checks passed:
 
 4. If yes, make both edits.
 
-5. After the edits are done, tell the user: "Version references updated. You can now run `/ship-it` to publish a new release with the updated game version. Once the release is out, don't forget to update the max-verified-game-version and any compatibility info on the hub listing at https://hub.coigame.com/Mod/17 — that step is manual."
+5. After the edits are done, commit them:
+   ```
+   git add manifest.json README.md
+   git commit -m "Update max verified game version to X.Y.Z"
+   ```
+   (Replace `X.Y.Z` with the actual new version string, including any hotfix letter.)
+
+6. After committing, tell the user: "Version references updated and committed. You can now run `/ship-it` to publish a new release. Once the release is out, don't forget to update the max-verified-game-version and any compatibility info on the hub listing at https://hub.coigame.com/Mod/17 — that step is manual."
 
 ---
 
