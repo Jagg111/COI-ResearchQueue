@@ -1,6 +1,6 @@
 {
 	"id": "ResearchQueue",
-	"version": "0.2.2",
+	"version": "1.0.0",
 	"display_name": "Research Queue",
 	"description_short": "Lets players manage their research queue.",
 	"description_long": "Without this mod, if you have a research queue and want to start something new, your only option is to clear the entire queue and rebuild it one item at a time. There's also no way to rearrange items once they're queued.\n\nResearch Queue solves this by adding a queue management panel directly inside the research tree.\n\nFeatures:\n- Integrated UI: panel appears inside the research tree and feels like a native feature\n- Drag-and-drop reordering of your research queue\n- Start or remove items directly from the queue\n- Live research visibility: see what's actively being researched and its progress\n- Works on existing saves: install and go, no new game required\n\nSafe to install and remove: the mod uses the game's existing research queue data and does not create its own save data. If you remove the mod, your queue stays exactly as-is.",
