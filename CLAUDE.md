@@ -11,21 +11,24 @@ The maintainer developing the mod and prompting is a not a programmer by trade. 
 - **Author:** Jagg111
 - **Mod ID:** `ResearchQueue`
 - **GitHub repo:** `Jagg111/COI-ResearchQueue`
-- **Game:** Captain of Industry (Update 4+)
+- **Game:** Captain of Industry
 - **Framework:** Mafi (.NET 4.8)
 - **Mod type:** `IMod`
 
 ## Distribution
 
-- **Exclusive:** [COI Mod Hub](https://hub.coigame.com/Mod/17) — the only distribution channel. Players download and install updates manually from there.
-- **License:** MIT
-- Follows the official Captain of Industry [modding policy](https://www.captain-of-industry.com/modding-policy)
+- **Exclusive:** [COI Mod Hub](https://hub.coigame.com/Mod/17) — the only distribution channel. Players download and install updates manually from there. The Hub does NOT auto-update.
+- **Hub forum:** Each mod gets its own forum board on the Hub. Bug reports go to [/Forum/Mods/ResearchQueue/bugs](https://hub.coigame.com/Forum/Mods/ResearchQueue/bugs); ideas/feedback go to [/Forum/Mods/ResearchQueue/ideas](https://hub.coigame.com/Forum/Mods/ResearchQueue/ideas).
+- **GitHub repo:** source code only. Not a player-facing channel — do not direct players there.
+- **License (mod's own code):** MIT (see `LICENSE`).
+- **License (game-code excerpts):** Per the [COI Modding Policy](https://www.captain-of-industry.com/modding-policy), short excerpts of game code (type names, method signatures, small samples — e.g. throughout `MODDING-REFERENCE.md`) are © MaFi Games and used only under the modding policy. The MIT grant explicitly excludes them; both `LICENSE` and `MODDING-REFERENCE.md` carry the required attribution notice.
+- **Hub license picker:** The Hub's per-mod license setting (COI-Open / COI-Keep / MIT / etc.) is configured once in the Hub UI at first upload and persists across versions. Not edited per release or via configs or manifest.
 
 ## External Resources
 
 - **Hub mod page:** https://hub.coigame.com/Mod/17
 - **Modding policy:** https://www.captain-of-industry.com/modding-policy
-- **Official modding repo (local clone):** `C:\Code\Captain-of-industry-modding`
+- **Official modding repo for reference (local clone):** `C:\Code\Captain-of-industry-modding`
 
 ## Project Structure
 
@@ -36,7 +39,6 @@ ResearchQueue.cs           # Main mod entry point
 ResearchQueueWindowController.cs  # Queue panel injected into research tree (auto-registered via DI)
 manifest.json                # Mod metadata (id, version, authors, dependencies, etc. — see Manifest Fields below)
 changelog.txt                # Cumulative player-facing changelog; bundled in every release zip
-readme.txt                   # Plain-text install instructions; bundled in every release zip
 bin/                         # Build output (gitignored)
 obj/                         # Build intermediates (gitignored)
 ```
@@ -92,8 +94,7 @@ On build, the mod is automatically deployed to `%APPDATA%\Captain of Industry\Mo
 The COI Hub is strict about what it expects in the zip and what it can display. Key rules learned the hard way:
 
 - **ZIP structure:** The zip must contain the mod folder as its root (e.g. `ResearchQueue/manifest.json`), so players can extract directly into their `Mods/` folder. Our script handles this automatically.
-- **Required files in zip:** `ResearchQueue.dll`, `manifest.json`, `changelog.txt`
-- **Recommended files in zip:** `readme.txt` (plain text install instructions)
+- **Files in zip:** `ResearchQueue.dll`, `manifest.json`, `changelog.txt`. Nothing else — the Hub renders install instructions and metadata, so no `readme.txt` is needed.
 - **`changelog.txt` format** — plain text, cumulative, newest entry first:
   ```
   v1.0.1 | 2026-05-07
@@ -107,7 +108,7 @@ The COI Hub is strict about what it expects in the zip and what it can display. 
 - **Manifest field limits** — `display_name` max 50 chars, `description_short` max 180 chars. These **cannot be edited after a version is uploaded**, so verify before packaging.
 - **Versions cannot be deleted or edited** once uploaded to the Hub. Always verify the zip contents before uploading.
 - **Output zip:** `package-release.ps1` writes to `bin\pkg\ResearchQueue-v<version>.zip`
-- **License:** MIT (set in Hub UI at upload time, not in the zip)
+- **License:** Configured once in the Hub UI at first upload and persists across versions — not set in the zip and not edited per release. See the Distribution section above for the full license picture.
 - **Distribution is manual:** The Hub does not auto-update players. Each new version must be downloaded and installed by the player.
 
 ## Release Workflow

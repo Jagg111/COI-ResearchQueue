@@ -1,85 +1,17 @@
-<div align="center">
+# Research Queue
 
-# 🔬 Research Queue (Captain of Industry Mod)
+> Drag-and-drop research queue management built right into the research tree. Reorder, start, or remove queued items without ever clearing your queue and starting over.
 
-### Stop rebuilding your entire queue when you change your mind. Manage your queue directly in the research tree.
-![Research Queue panel with drag-and-drop controls inside the research tree](screenshots/current.gif)
+Source code for the **Research Queue** mod for [Captain of Industry](https://www.captain-of-industry.com).
 
-**[⬇️ Get it on the COI Mod Hub](https://hub.coigame.com/Mod/17)**
-</div>
+Players: get the mod from the [COI Mod Hub](https://hub.coigame.com/Mod/17). The Hub is the only distribution channel - install instructions, screenshots, changelog, and the mod forum all live there.
 
-## 🎯 Why This Mod?
+## Build from source
 
-Without this mod, if you have a queue and want to start new research, your only option is to clear your entire queue and rebuild it one item at a time. There's also no way to rearrange your queue... 😩
+Requires the `COI_ROOT` environment variable pointing at your Captain of Industry install. Open `ResearchQueue.sln` in Visual Studio, or run `dotnet build ResearchQueue.sln` from the repo root. See [CLAUDE.md](CLAUDE.md) for full project setup, structure, and release workflow.
 
-**The Research Queue mod** solves this by adding a queue management panel directly inside the research tree.
+## License
 
-## ✨ Features
+This mod's own source code is released under the [MIT License](LICENSE).
 
-- 🎨 **Integrated UI** - panel appears directly inside the research tree and feels like a native feature
-- 🔀 **Drag-and-drop reordering** of your research queue
-- 🖱️ **Start or remove items** - buttons to manage items directly in the queue
-- 📊 **Live research visibility** - see what's actively being researched and its progress
-- 💾 **Works on existing saves** - install and go, no new game required
-
-## 🔔 Updates & Changelog
-
-New versions are published to the [COI Mod Hub](https://hub.coigame.com/Mod/17). Check there for updates -- you'll need to download and install each new version manually.
-
-## 📦 Installation
-
-1. Open the [Research Queue mod page on the COI Mod Hub](https://hub.coigame.com/Mod/17) and download the latest version
-2. Extract the zip file and copy the **`ResearchQueue`** folder into your mods directory:
-   ```
-   %APPDATA%\Captain of Industry\Mods\
-   ```
-   *💡 Tip: press `Win + R`, paste the path above, and hit Enter to jump straight there.*
-
-   Your mods folder should look like this:
-   ```
-   Mods\ResearchQueue\
-       ResearchQueue.dll
-       manifest.json
-   ```
-3. Launch the game, but **do NOT click Continue** - you don't get the option to enable mods there - **click Load**
-4. Click the **"Mods & DLCs"** button, enable the mod, then load your save.
-
-Once in-game, open the research tree and the queue panel will appear when no research nodes are selected.
-
-## ⭐ Support
-
-If you find this mod useful, consider starring the repo ⭐ - it helps others discover it!
-
-## 🔧 Compatibility
-
-| | |
-|---|---|
-| 🎮 **Game version** | Update 4+<br>(0.8.4 verified) |
-| 💾 **Save compatible** | Yes |
-| 🛡️ **Safe to remove** | Yes |
-| 🤝 **Other mods** | No known conflicts |
-
-## ❓ FAQ
-
-**Does this work with existing saves?**  
-✅ Yes! Just install and enable it when loading your save. No new game needed.
-
-**What happens if I remove the mod?**  
-✅ Your queue stays exactly as-is. You just lose the panel and interface for managing it.
-
-**Does this conflict with other mods?**  
-✅ No known conflicts. If you encounter any issues, please [let me know](https://github.com/Jagg111/COI-ResearchQueue/discussions/new?category=bug-reports)!
-
-**Is this mod safe? Does it modify save files?**  
-✅ The mod uses the game's existing research queue data. It does not create its own save data or modify save files directly - it only changes the order of items already in the queue.
-
-## 🐛 Feedback & Bug Reports
-
-Got a suggestion or found a bug?
-- **[COI Hub mod forum](https://hub.coigame.com/Mod/17)** — preferred, keeps discussion alongside the mod
-- **[GitHub Discussions](https://github.com/Jagg111/COI-ResearchQueue/discussions)** — also monitored
-
----
-
-<sub>This mod follows the official Captain of Industry [modding policy](https://www.captain-of-industry.com/modding-policy).</sub>
-
+This repository includes short excerpts of and references to Captain of Industry game code (most notably in `MODDING-REFERENCE.md` and reflection patterns in the source). Any such Game Code is © MaFi Games and is used only under the [Captain of Industry Modding Policy](https://www.captain-of-industry.com/modding-policy). The MIT grant above does **not** extend to that material.

@@ -130,6 +130,8 @@ git tag v<version>
 git push && git push --tags
 ```
 
+   The git tag is for source archaeology only -- the COI Hub is the actual release channel. Tags do not trigger any distribution.
+
 4. **Wait** for the user to confirm they've committed and pushed before continuing. Never commit on their behalf.
 
 ---
@@ -161,7 +163,7 @@ Tell the user:
 > Upload it to the COI Hub at [hub.coigame.com/Mod/17](https://hub.coigame.com/Mod/17) using the "upload new version" option.
 >
 > - The Hub will automatically parse `changelog.txt` from inside the zip and display it -- no need to paste anything manually
-> - License: MIT
+> - Leave the license as previously selected (it persists across versions and is set once at first upload)
 > - Mark the version as **Stable** (or **Beta** if this is a pre-release)
 
 Then ask: "Did this release include any visible UI changes?" If yes, remind the user:
