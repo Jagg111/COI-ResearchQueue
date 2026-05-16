@@ -21,7 +21,7 @@ The maintainer developing the mod and prompting is a not a programmer by trade. 
 - **Hub forum:** Each mod gets its own forum board on the Hub. Bug reports go to [/Forum/Mods/ResearchQueue/bugs](https://hub.coigame.com/Forum/Mods/ResearchQueue/bugs); ideas/feedback go to [/Forum/Mods/ResearchQueue/ideas](https://hub.coigame.com/Forum/Mods/ResearchQueue/ideas).
 - **GitHub repo:** source code only. Not a player-facing channel — do not direct players there.
 - **License (mod's own code):** MIT (see `LICENSE`).
-- **License (game-code excerpts):** Per the [COI Modding Policy](https://www.captain-of-industry.com/modding-policy), short excerpts of game code (type names, method signatures, small samples — e.g. throughout `MODDING-REFERENCE.md`) are © MaFi Games and used only under the modding policy. The MIT grant explicitly excludes them; both `LICENSE` and `MODDING-REFERENCE.md` carry the required attribution notice.
+- **License (game-code excerpts):** Per the [COI Modding Policy](https://www.captain-of-industry.com/modding-policy), short excerpts of game code (type names, method signatures, small samples — e.g. throughout `docs/MODDING-REFERENCE.md`) are © MaFi Games and used only under the modding policy. The MIT grant explicitly excludes them; both `LICENSE` and `docs/MODDING-REFERENCE.md` carry the required attribution notice.
 - **Hub license picker:** The Hub's per-mod license setting (COI-Open / COI-Keep / MIT / etc.) is configured once in the Hub UI at first upload and persists across versions. Not edited per release or via configs or manifest.
 
 ## External Resources
@@ -128,7 +128,7 @@ The skill `/game-version-check` can be run after any Captain of Industry game up
 
 ## Modding Reference
 
-For detailed game API docs, modding patterns, reflection examples, and UI patterns (all verified against Update 4 DLLs), see **MODDING-REFERENCE.md**.
+For detailed game API docs, modding patterns, reflection examples, and UI patterns (all verified against Update 4 DLLs), see **docs/MODDING-REFERENCE.md**.
 
 ## Mod Goal & Player Experience
 
@@ -167,7 +167,7 @@ This project uses **Semantic Versioning** (`MAJOR.MINOR.PATCH`):
 
 Whenever we discover something new about how the game works, its APIs, types, method signatures, or modding patterns — **always update the relevant docs without being asked**:
 
-- **MODDING-REFERENCE.md** — Game API discoveries, type signatures, working code patterns, gotchas, and corrections to previous assumptions. This is the technical encyclopedia.
+- **docs/MODDING-REFERENCE.md** — Game API discoveries, type signatures, working code patterns, gotchas, and corrections to previous assumptions. This is the technical encyclopedia.
 - **CLAUDE.md** — Update if project-level info changes (mod type, structure, scope decisions, etc.)
 
 Do not wait for the user to prompt for doc updates. If we learn it, we document it.

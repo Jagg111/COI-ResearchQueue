@@ -14,4 +14,4 @@ Requires the `COI_ROOT` environment variable pointing at your Captain of Industr
 
 This mod's own source code is released under the [MIT License](LICENSE).
 
-This repository includes short excerpts of and references to Captain of Industry game code (most notably in `MODDING-REFERENCE.md` and reflection patterns in the source). Any such Game Code is © MaFi Games and is used only under the [Captain of Industry Modding Policy](https://www.captain-of-industry.com/modding-policy). The MIT grant above does **not** extend to that material.
+This repository includes short excerpts of and references to Captain of Industry game code (most notably in `docs/MODDING-REFERENCE.md` and reflection patterns in the source). Any such Game Code is © MaFi Games and is used only under the [Captain of Industry Modding Policy](https://www.captain-of-industry.com/modding-policy). The MIT grant above does **not** extend to that material.
