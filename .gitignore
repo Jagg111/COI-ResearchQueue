@@ -3,7 +3,6 @@ obj/
 *.user
 *.suo
 .vs/
-screenshots/temp/
 # Ignore .claude/ contents except the skills folder (which is version-controlled)
 .claude/*
 !.claude/skills

@@ -166,10 +166,6 @@ Tell the user:
 > - Leave the license as previously selected (it persists across versions and is set once at first upload)
 > - Mark the version as **Stable** (or **Beta** if this is a pre-release)
 
-Then ask: "Did this release include any visible UI changes?" If yes, remind the user:
-
-> Don't forget to update `screenshots/current.gif` in the repo to reflect the new UI, then commit it. The README links directly to that file.
-
 Conclude by saying something fun and lighthearted.
 
 ---
