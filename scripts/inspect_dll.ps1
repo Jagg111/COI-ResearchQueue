@@ -1,9 +1,9 @@
-# Usage: powershell -File inspect_dll.ps1 <TypeName> [DllName]
+# Usage: powershell -File scripts\inspect_dll.ps1 <TypeName> [DllName]
 # Examples:
-#   powershell -File inspect_dll.ps1 ResearchManager Mafi.Core.dll
-#   powershell -File inspect_dll.ps1 PanelWithHeader Mafi.Unity.dll
-#   powershell -File inspect_dll.ps1 Display Mafi.Unity.dll
-#   powershell -File inspect_dll.ps1 Queueue Mafi.dll
+#   powershell -File scripts\inspect_dll.ps1 ResearchManager Mafi.Core.dll
+#   powershell -File scripts\inspect_dll.ps1 PanelWithHeader Mafi.Unity.dll
+#   powershell -File scripts\inspect_dll.ps1 Display Mafi.Unity.dll
+#   powershell -File scripts\inspect_dll.ps1 Queueue Mafi.dll
 #
 # If DllName is omitted, searches all four game DLLs: Mafi.dll, Mafi.Core.dll, Mafi.Base.dll, Mafi.Unity.dll
 # Outputs: constructors, public properties, public fields, public methods (declared only), base class chain, interfaces

@@ -2156,17 +2156,17 @@ Update 4 introduced a new mod selection UI with:
 
 ## DLL Inspection Technique
 
-Use the reusable `inspect_dll.ps1` script in the project root to inspect any game type:
+Use the reusable `scripts/inspect_dll.ps1` script to inspect any game type:
 
 ```powershell
 # Inspect a specific type in a specific DLL
-powershell -ExecutionPolicy Bypass -File inspect_dll.ps1 ResearchManager Mafi.Core.dll
+powershell -ExecutionPolicy Bypass -File scripts\inspect_dll.ps1 ResearchManager Mafi.Core.dll
 
 # Inspect a type across all game DLLs (searches Mafi.dll, Mafi.Core.dll, Mafi.Base.dll, Mafi.Unity.dll)
-powershell -ExecutionPolicy Bypass -File inspect_dll.ps1 PanelWithHeader
+powershell -ExecutionPolicy Bypass -File scripts\inspect_dll.ps1 PanelWithHeader
 
 # If no exact match, prints partial matches to help find the right type name
-powershell -ExecutionPolicy Bypass -File inspect_dll.ps1 Toolbar
+powershell -ExecutionPolicy Bypass -File scripts\inspect_dll.ps1 Toolbar
 ```
 
 Output includes: inheritance chain, interfaces, constructors, public properties, fields, and methods (declared only).

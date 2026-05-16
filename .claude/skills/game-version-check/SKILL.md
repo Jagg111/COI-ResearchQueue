@@ -15,8 +15,8 @@ The ResearchQueue mod depends on internal game code that isn't part of any offic
 | File | What it does |
 |------|-------------|
 | `changelog.txt` (game's, not the mod's) | The game's own changelog, located in the game install directory (`$COI_ROOT`). The first line is always the current version (e.g. `v0.8.2c | 2026-03-23`), including hotfix letter suffixes. This is the version source used in Step 0. Note: the mod repo also has a `changelog.txt` at its root -- that is the player-facing mod changelog, not this file. |
-| `check-reflection-targets.ps1` | The diagnostic script. Reads the mod's source code to find every internal game reference, then checks each one against the actual game files. No separate list to maintain -- it always matches what's in the code. |
-| `inspect_dll.ps1` | A deeper inspection tool. When something breaks, this shows you what a game type looks like now so you can spot what changed (renamed, moved, etc.). |
+| `scripts\check-reflection-targets.ps1` | The diagnostic script. Reads the mod's source code to find every internal game reference, then checks each one against the actual game files. No separate list to maintain -- it always matches what's in the code. |
+| `scripts\inspect_dll.ps1` | A deeper inspection tool. When something breaks, this shows you what a game type looks like now so you can spot what changed (renamed, moved, etc.). |
 | `ResearchQueueWindowController.cs` | The mod's main code file. Contains all the `ReflectionProbe.*` calls that define what internal game code the mod depends on. |
 
 ---
@@ -55,7 +55,7 @@ Run the offline diagnostic to see if the mod's internal game references still re
 Run the diagnostic script from the project root:
 
 ```
-powershell -ExecutionPolicy Bypass -File check-reflection-targets.ps1
+powershell -ExecutionPolicy Bypass -File scripts\check-reflection-targets.ps1
 ```
 
 Always show the user the full output table. The results break down into three categories:
@@ -72,9 +72,9 @@ Tell the user the offline checks look good, and continue to Step 2 for manual te
 
 Explain to the user in plain language what broke and what it means for the mod. For each failed target:
 
-1. Run `inspect_dll.ps1` on the affected type to see what it looks like now:
+1. Run `scripts\inspect_dll.ps1` on the affected type to see what it looks like now:
    ```
-   powershell -File inspect_dll.ps1 <TypeName> <DllName>
+   powershell -File scripts\inspect_dll.ps1 <TypeName> <DllName>
    ```
 
 2. Compare the output against the member name that failed. Explain what likely happened:
@@ -85,7 +85,7 @@ Explain to the user in plain language what broke and what it means for the mod. 
 3. After making fixes, rebuild and re-run the diagnostic:
    ```
    dotnet build ResearchQueue.sln
-   powershell -ExecutionPolicy Bypass -File check-reflection-targets.ps1
+   powershell -ExecutionPolicy Bypass -File scripts\check-reflection-targets.ps1
    ```
 
 4. Repeat until all static checks pass. Only then continue to Step 2.

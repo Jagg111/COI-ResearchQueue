@@ -2,14 +2,15 @@
 # Verifies that all reflection targets used by the ResearchQueue mod still exist
 # in the game DLLs. Run after a game update to quickly identify what broke.
 #
-# Usage: powershell -ExecutionPolicy Bypass -File check-reflection-targets.ps1
+# Usage: powershell -ExecutionPolicy Bypass -File scripts\check-reflection-targets.ps1
 #
 # This script parses ResearchQueueWindowController.cs to find all ReflectionProbe
 # calls, then checks each target against the actual game DLLs. The C# source is
 # the single source of truth -- no separate list to maintain.
 
 $basePath = "$env:COI_ROOT\Captain of Industry_Data\Managed"
-$sourceFile = Join-Path $PSScriptRoot "ResearchQueueWindowController.cs"
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$sourceFile = Join-Path $repoRoot "ResearchQueueWindowController.cs"
 
 if (-not (Test-Path $basePath)) {
     Write-Host "ERROR: Game DLL path not found: $basePath" -ForegroundColor Red
@@ -216,7 +217,7 @@ Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "  Results: $passed PASS, $failed FAIL, $skipped SKIP" -ForegroundColor Cyan
 if ($failed -gt 0) {
-    Write-Host "  Action: Run inspect_dll.ps1 on failed types to see what changed" -ForegroundColor Yellow
+    Write-Host "  Action: Run scripts\inspect_dll.ps1 on failed types to see what changed" -ForegroundColor Yellow
 }
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""

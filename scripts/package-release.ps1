@@ -16,7 +16,7 @@ function Fail([string]$Message) {
     throw $Message
 }
 
-$repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repoRoot
 
 $manifestPath = Join-Path $repoRoot "manifest.json"

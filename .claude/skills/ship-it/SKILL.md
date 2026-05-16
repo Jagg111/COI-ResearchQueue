@@ -17,12 +17,12 @@ When you're ready to publish a new version of the mod, this skill walks you thro
 | `manifest.json` | Mod version -- the source of truth for release tags and titles |
 | `changelog.txt` | Cumulative player-facing changelog; updated each release and bundled inside the mod ZIP |
 | `bin/pkg/whats-new.md` | Release notes draft -- written during this workflow as a working buffer |
-| `package-release.ps1` | Packaging script that builds the zip for Hub upload |
+| `scripts/package-release.ps1` | Packaging script that builds the zip for Hub upload |
 
 **Test mode:** If the user invoked `/ship-it --test`, follow all steps but:
 - Do NOT write `bin/pkg/whats-new.md`
 - Do NOT edit `manifest.json` or `changelog.txt`
-- Do NOT run `package-release.ps1`
+- Do NOT run `scripts/package-release.ps1`
 - Instead, show what *would* happen at each of those steps and label the output clearly with `[TEST RUN -- not applied]`
 
 At the end of a test run, say "Test run complete -- nothing was written or committed."
@@ -143,7 +143,7 @@ Build and package the mod zip for Hub upload.
 Once the user confirms they've committed, run:
 
 ```
-.\package-release.ps1
+.\scripts\package-release.ps1
 ```
 
 The script builds the DLL, stages `ResearchQueue.dll`, `manifest.json`, and `changelog.txt` into the zip, and outputs the final zip path.
@@ -174,5 +174,5 @@ Conclude by saying something fun and lighthearted.
 
 - The What's New bullets are written for players, not developers. Commits that only affect build scripts, docs, or code comments are intentionally left out of the release notes.
 - `changelog.txt` is plain text -- strip markdown link syntax when writing to it. The Hub does not render markdown.
-- `package-release.ps1` can also be run standalone outside of this workflow if needed, as long as `changelog.txt` exists and is up to date.
+- `scripts/package-release.ps1` can also be run standalone outside of this workflow if needed, as long as `changelog.txt` exists and is up to date.
 - The COI Hub does NOT provide automatic updates to players. Players must manually download and install each new version.

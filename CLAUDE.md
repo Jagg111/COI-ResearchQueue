@@ -107,7 +107,7 @@ The COI Hub is strict about what it expects in the zip and what it can display. 
   The Hub parses this automatically — no manual pasting needed. Strip any markdown from bullets (plain text only).
 - **Manifest field limits** — `display_name` max 50 chars, `description_short` max 180 chars. These **cannot be edited after a version is uploaded**, so verify before packaging.
 - **Versions cannot be deleted or edited** once uploaded to the Hub. Always verify the zip contents before uploading.
-- **Output zip:** `package-release.ps1` writes to `bin\pkg\ResearchQueue-v<version>.zip`
+- **Output zip:** `scripts/package-release.ps1` writes to `bin\pkg\ResearchQueue-v<version>.zip`
 - **License:** Configured once in the Hub UI at first upload and persists across versions — not set in the zip and not edited per release. See the Distribution section above for the full license picture.
 - **Distribution is manual:** The Hub does not auto-update players. Each new version must be downloaded and installed by the player.
 
@@ -117,14 +117,14 @@ The skill `/ship-it` will create a new release. It handles everything end-to-end
 
 - `manifest.json` -- version is the source of truth for release tags and titles
 - `changelog.txt` -- cumulative changelog updated each release; bundled inside the zip so the Hub parses it automatically
-- `package-release.ps1` -- the underlying packaging script called by `/ship-it`; can also be run standalone
+- `scripts/package-release.ps1` -- the underlying packaging script called by `/ship-it`; can also be run standalone
 
 ## Health Checks & Game Version Compatibility
 
 The skill `/game-version-check` can be run after any Captain of Industry game update to check whether the mod will still work. The skill handles the full workflow end-to-end -- see `.claude/skills/game-version-check/SKILL.md` for details.
 
-- `check-reflection-targets.ps1` — the underlying diagnostic script; checks all internal game references the mod depends on against the actual game DLLs. Can also be run standalone.
-- `inspect_dll.ps1` — deeper inspection tool used when something breaks to see what changed in the game
+- `scripts/check-reflection-targets.ps1` — the underlying diagnostic script; checks all internal game references the mod depends on against the actual game DLLs. Can also be run standalone.
+- `scripts/inspect_dll.ps1` — deeper inspection tool used when something breaks to see what changed in the game
 
 ## Modding Reference
 
@@ -144,7 +144,7 @@ Queue state lives in the game's own save data, manipulated directly via reflecti
 - Before writing any code, ask clarifying questions to gather enough context to attempt the task in one pass. Don't start writing until the intent is clear and there is little room for ambiguity or interpretation.
 - **GitHub Issues:** Before starting any bug fix or feature work, check `gh issue list` for a related open issue. If one exists, remind the user so commit messages can include `Fixes #N` (or `Closes #N` / `Resolves #N`) — GitHub auto-closes the issue when the commit lands on `main`
 - **Commit messages:** Single line describing what changed. No body text. For sessions related to github issues append `Fixes #N` for bug issues or `Closes #N` for enhancement issues.
-- **Reflection safety:** All reflection access (`GetField`, `GetProperty`, `GetMethod`) must go through the `ReflectionProbe` helper in `ResearchQueueWindowController.cs`. This keeps the runtime health check and `check-reflection-targets.ps1` automatically in sync. After a game update, run `/game-version-check` to diagnose breakage.
+- **Reflection safety:** All reflection access (`GetField`, `GetProperty`, `GetMethod`) must go through the `ReflectionProbe` helper in `ResearchQueueWindowController.cs`. This keeps the runtime health check and `scripts/check-reflection-targets.ps1` automatically in sync. After a game update, run `/game-version-check` to diagnose breakage.
 
 ## Versioning
 
