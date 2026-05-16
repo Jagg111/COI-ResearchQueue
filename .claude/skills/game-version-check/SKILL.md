@@ -169,30 +169,43 @@ Continue to Step 5.
 
 ---
 
-## Step 5 -- Version bump (conditional)
+## Step 5 -- Update verified version (conditional)
 
-**Only run this step if the game version from Step 0 is different from the `max_verified_game_version` in manifest.json.** If they already match, skip this step entirely and say something fun and lighthearted.
+**Skip this step entirely if the game version from Step 0 already matches `max_verified_game_version` in manifest.json.** Say something fun and lighthearted and stop.
 
-If the versions differ and all checks passed:
+If the versions differ, the path depends on whether any code changes were needed in Step 4:
 
-1. Tell the user: "The game version has changed and all compatibility checks passed. Let's update the mod to reflect the new verified version."
+### Case A: Nothing broke -- no code changes were needed
 
-2. List the two places that need updating:
-   - `manifest.json`: change `max_verified_game_version` from the old version to the new one, using the **full version string including any hotfix letter** (e.g. `"0.8.2c"` not `"0.8.2"`)
-   - `README.md` (compatibility table): change the `(X.Y.Z verified)` text to show the new version, including any hotfix letter (e.g. `(0.8.2c verified)`)
+This is the common case for hotfix letters and even minor game updates where everything still works. **Do NOT ship a new release.** The COI Hub has a "Re-verify game version range" widget on each version's page that lets the mod owner extend the verified range without uploading a new zip. This works for any newer version the manifest hasn't formally claimed -- including hotfix letters above the manifest max (e.g. `0.8.4` → `0.8.4b`) and even higher versions (e.g. `0.8.4` → `0.8.5`). The "Must be ≥ X (manifest max: Y)" hint shown next to the field is misleading -- the Hub accepts values above the manifest max and tags the version with a "re-verified" badge.
 
-3. Ask the user if they'd like to proceed with these updates.
+Do this:
 
-4. If yes, make both edits.
+1. Tell the user: "All compatibility checks passed with no code changes needed. The cleanest path is to use the Hub's re-verify widget — no new release required. I'll also update the repo files so the manifest stays honest about what's been verified."
 
-5. After the edits are done, commit them:
+2. Update the in-repo files so the source of truth matches reality:
+   - `manifest.json`: change `max_verified_game_version` to the new full version string including any hotfix letter (e.g. `"0.8.4b"`).
+   - `README.md` (compatibility table): change the `(X.Y.Z verified)` text to show the new version (e.g. `(0.8.4b verified)`).
+
+3. Ask the user if they'd like to proceed with these edits.
+
+4. If yes, make both edits and commit:
    ```
    git add manifest.json README.md
    git commit -m "Update max verified game version to X.Y.Z"
    ```
-   (Replace `X.Y.Z` with the actual new version string, including any hotfix letter.)
 
-6. After committing, tell the user: "Version references updated and committed. You can now run `/ship-it` to publish a new release. Once the release is out, don't forget to update the max-verified-game-version and any compatibility info on the hub listing at https://hub.coigame.com/Mod/17 — that step is manual."
+5. After committing, tell the user: "Repo files updated and committed. To publish the re-verification to players, go to https://hub.coigame.com/Mod/17, open the latest version, and use the **Re-verify game version range** widget — type `X.Y.Z` in the 'Verified up to' field and click Save. No new release needed."
+
+### Case B: Something broke and needed a fix, OR a new feature was added
+
+In this case a new release is warranted -- either to deliver the compatibility fix or because there's something new for players. The `/ship-it` skill handles version bumping, manifest updates, packaging, and Hub upload reminders end-to-end.
+
+Do this:
+
+1. Tell the user: "Code changes were made during this check. A new release is warranted to ship the fixes/changes to players. Run `/ship-it` to handle the version bump, manifest update, packaging, and Hub upload."
+
+2. Remind them to also bump `max_verified_game_version` in `manifest.json` to the new game version (with hotfix letter) as part of the release, so the shipped manifest reflects the verified compatibility.
 
 ---
 
